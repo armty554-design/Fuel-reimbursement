@@ -22,5 +22,6 @@ Thumbs.db
 
 # Temporary raw downloads from Google Sheets
 *.csv
-*.html
+doc*.html
+!index.html
 *_preview.txt
