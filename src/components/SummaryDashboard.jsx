@@ -632,7 +632,7 @@ export default function SummaryDashboard({
                     <tr 
                       key={row.day} 
                       className={`hover:bg-slate-50/80 transition-colors ${
-                        isSunday ? 'bg-red-50/20' : ''
+                        isSunday ? 'bg-red-50/40 text-red-600 font-medium' : ''
                       }`}
                     >
                       <td className={`py-2.5 px-3 text-center font-bold ${
@@ -640,31 +640,49 @@ export default function SummaryDashboard({
                       }`}>
                         {row.dayName}
                       </td>
-                      <td className="py-2.5 px-3 text-center tabular-nums text-slate-800">
+                      <td className={`py-2.5 px-3 text-center tabular-nums font-medium ${
+                        isSunday ? 'text-red-600' : 'text-slate-800'
+                      }`}>
                         {row.dateStr}
                       </td>
-                      <td className="py-2.5 px-3 text-center tabular-nums font-semibold text-slate-700">
+                      <td className={`py-2.5 px-3 text-center tabular-nums font-semibold ${
+                        isSunday ? 'text-red-600' : 'text-slate-700'
+                      }`}>
                         {row.activeVehicles}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums font-bold text-slate-800">
+                      <td className={`py-2.5 px-3 text-right tabular-nums font-bold ${
+                        isSunday ? 'text-red-600' : 'text-slate-800'
+                      }`}>
                         {row.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-700">
+                      <td className={`py-2.5 px-3 text-right tabular-nums ${
+                        isSunday ? 'text-red-600 font-medium' : 'text-slate-700'
+                      }`}>
                         {row.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums font-bold text-slate-800">
+                      <td className={`py-2.5 px-3 text-right tabular-nums font-bold ${
+                        isSunday ? 'text-red-600' : 'text-slate-800'
+                      }`}>
                         ฿{row.dieselPrice.toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-500">
+                      <td className={`py-2.5 px-3 text-right tabular-nums ${
+                        isSunday ? 'text-red-600 font-medium' : 'text-slate-500'
+                      }`}>
                         {row.compRate.toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums font-bold text-blue-800 bg-blue-50/30 text-sm">
+                      <td className={`py-2.5 px-3 text-right tabular-nums font-bold text-sm ${
+                        isSunday ? 'text-red-600 bg-red-100/50' : 'text-blue-800 bg-blue-50/30'
+                      }`}>
                         ฿{row.totalCompensation.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-700">
+                      <td className={`py-2.5 px-3 text-right tabular-nums ${
+                        isSunday ? 'text-red-600 font-medium' : 'text-slate-700'
+                      }`}>
                         {row.tanks > 0 ? row.tanks.toLocaleString('th-TH') : '-'}
                       </td>
-                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-700 font-semibold">
+                      <td className={`py-2.5 px-3 text-right tabular-nums font-semibold ${
+                        isSunday ? 'text-red-600' : 'text-emerald-700'
+                      }`}>
                         {row.compPerTank > 0 ? row.compPerTank.toFixed(2) : '-'}
                       </td>
                     </tr>
