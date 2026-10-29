@@ -43,4 +43,10 @@ async function main() {
   }
 }
 
-main();
+main().then(() => {
+  console.log('All months downloaded successfully!');
+  process.exit(0);
+}).catch(err => {
+  console.error('Download failed:', err);
+  process.exit(1);
+});

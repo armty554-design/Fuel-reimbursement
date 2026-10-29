@@ -116,11 +116,11 @@ console.log(branchSummary);
 
 // Save updated seedData
 const updatedSeed = {
+  ...existingSeed,
   branches: OFFICIAL_BRANCHES,
-  drivers,
-  records,
-  fuelPrices
+  drivers
 };
 
 fs.writeFileSync('./src/data/seedData.json', JSON.stringify(updatedSeed, null, 2), 'utf8');
 console.log('Successfully updated src/data/seedData.json with real contractors from spreadsheet!');
+process.exit(0);
