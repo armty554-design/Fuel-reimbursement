@@ -73,35 +73,98 @@ monthDefs.forEach(m => {
   if (fs.existsSync(compFile)) {
     const rows = parseCsv(fs.readFileSync(compFile, 'utf8'));
     
-    // Month 03 has different header (starts directly with headers at row 0)
+    // Month 03: build full 31 days combining doc2_tanks_03.csv, doc2_diff_03.csv, and doc2_comp_03.csv
     if (mKey === '03') {
+      // 1. Tanks from doc2_tanks_03.csv
+      const marchTanks = Array(32).fill(0);
+      if (fs.existsSync('doc2_tanks_03.csv')) {
+        const tankRows = parseCsv(fs.readFileSync('doc2_tanks_03.csv', 'utf8'));
+        const header = tankRows[0] || [];
+        const totalRow = tankRows.find(r => r[0] && r[0].startsWith('Total ผปก'));
+        if (totalRow) {
+          header.forEach((h, colIdx) => {
+            if (h.includes('/03/2026')) {
+              const d = parseInt(h.split('/')[0]);
+              if (d >= 1 && d <= 31) {
+                marchTanks[d] = cleanNum(totalRow[colIdx]);
+              }
+            }
+          });
+        }
+      }
+
+      // 2. Km from doc2_diff_03.csv for days 1-17
+      const marchDiffKm = Array(32).fill(0);
+      if (fs.existsSync('doc2_diff_03.csv')) {
+        const diffRows = parseCsv(fs.readFileSync('doc2_diff_03.csv', 'utf8'));
+        diffRows.forEach(r => {
+          if (r[9] && r[9].trim() === 'DIFF. + 10%') {
+            for (let d = 1; d <= 31; d++) {
+              const val = cleanNum(r[9 + d]);
+              if (val > 0) marchDiffKm[d] += val;
+            }
+          }
+        });
+      }
+
+      // 3. Compensation from doc2_comp_03.csv for days 18-31
+      const comp18to31 = {};
       for (let r = 1; r < rows.length; r++) {
         const row = rows[r];
         if (!row || !row[0] || row[0].includes('ผลรวม')) continue;
-        const dateStr = row[0]; // e.g. 18/03/2026
-        const day = parseInt(dateStr.split('/')[0]);
-        const km = cleanNum(row[1]);
-        const litres = cleanNum(row[2]);
-        const price = cleanNum(row[3]);
-        const compRate = cleanNum(row[4]);
-        const comp = cleanNum(row[5]);
-        const tanks = cleanNum(row[6]);
-        const perTank = cleanNum(row[7]);
-
+        const day = parseInt(row[0].split('/')[0]);
         if (day) {
-          allFuelPrices[mKey][day] = price;
-          allDailyOfficial[mKey].push({
-            day,
-            dateStr,
-            km,
-            litres,
-            price,
-            compRate,
-            comp,
-            tanks,
-            perTank
-          });
+          comp18to31[day] = {
+            km: cleanNum(row[1]),
+            litres: cleanNum(row[2]),
+            price: cleanNum(row[3]),
+            compRate: cleanNum(row[4]),
+            comp: cleanNum(row[5]),
+            tanks: cleanNum(row[6]),
+            perTank: cleanNum(row[7])
+          };
         }
+      }
+
+      // 4. Assemble all 31 days
+      const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+      for (let d = 1; d <= 31; d++) {
+        const date = new Date(2026, 2, d);
+        const dayName = thaiDays[date.getDay()];
+        const dateStr = `${String(d).padStart(2, '0')}/03/2569`;
+        const tanks = marchTanks[d] || (comp18to31[d]?.tanks) || 0;
+
+        let km, litres, price, compRate, comp, perTank;
+        if (comp18to31[d]) {
+          km = comp18to31[d].km;
+          litres = comp18to31[d].litres;
+          price = comp18to31[d].price;
+          compRate = comp18to31[d].compRate;
+          comp = comp18to31[d].comp;
+          perTank = tanks > 0 ? parseFloat((comp / tanks).toFixed(2)) : 0;
+        } else {
+          // Days 1 to 17 (Official diesel price 29.94 <= basePrice 30 -> 0 comp)
+          km = Math.round(marchDiffKm[d]);
+          litres = km > 0 ? parseFloat((km / 8.73).toFixed(2)) : 0;
+          price = 29.94;
+          compRate = 0;
+          comp = 0;
+          perTank = 0;
+        }
+
+        allFuelPrices[mKey][d] = price;
+        allDailyOfficial[mKey].push({
+          day: d,
+          dayName,
+          dateStr,
+          km,
+          litres,
+          price,
+          compRate,
+          comp,
+          tanks,
+          perTank
+        });
       }
     } else {
       // Months 04 to 10

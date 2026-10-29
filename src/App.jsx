@@ -12,7 +12,7 @@ import SummaryDashboard from './components/SummaryDashboard';
 import LoginPage from './components/LoginPage';
 import seedData from './data/seedData.json';
 
-const STORAGE_KEY = 'fuel_app_state_v5';
+const STORAGE_KEY = 'fuel_app_state_v6';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
