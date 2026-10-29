@@ -1071,13 +1071,13 @@ export default function MonthlyExecutiveDashboard({
               ) : (
                 branchMatrixData.rows.map((b, idx) => {
                   const isTop3 = idx < 3;
-                  const isFiltered = selectedBranchFilter === b.id;
+                  const isBranchSelected = selectedBranches.includes(b.id);
 
                   return (
                     <tr 
                       key={b.id} 
                       className={`hover:bg-indigo-50/40 transition-colors ${
-                        isFiltered ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : ''
+                        isBranchSelected ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : ''
                       }`}
                     >
                       <td className="py-3 px-4 text-center tabular-nums">
@@ -1141,15 +1141,21 @@ export default function MonthlyExecutiveDashboard({
                       
                       <td className="py-3 px-4 text-center">
                         <button
-                          onClick={() => handleBranchSelect(b.id)}
+                          onClick={() => {
+                            if (isBranchSelected) {
+                              setSelectedBranches(selectedBranches.filter(id => id !== b.id));
+                            } else {
+                              handleBranchSelect(b.id);
+                            }
+                          }}
                           className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs ${
-                            isFiltered
+                            isBranchSelected
                               ? 'bg-blue-600 text-white'
                               : 'bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700'
                           }`}
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>{isFiltered ? 'กำลังดูสาขานี้' : 'วิเคราะห์สาขานี้'}</span>
+                          <span>{isBranchSelected ? 'กำลังดูสาขานี้' : 'วิเคราะห์สาขานี้'}</span>
                         </button>
                       </td>
                     </tr>
