@@ -225,19 +225,6 @@ export default function App() {
           />
         )}
       </main>
-
-      {/* Clean Minimal Footer with Credits */}
-      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 space-y-1">
-        <div className="font-semibold text-slate-700">
-          ระบบบันทึกและคำนวณเงินชดเชยค่าน้ำมัน • บริษัท สปริงเคิล มาร์เก็ตติ้ง จำกัด (SPRINKLE DRINKING WATER)
-        </div>
-        <div className="text-[11px] text-slate-400">
-          คำนวณตามเกณฑ์อัตรากิโลเมตรสุทธิ DIFF. + 10% และราคาน้ำมันดีเซลทางการรายวัน
-        </div>
-        <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 max-w-lg mx-auto">
-          ออกแบบและพัฒนาโดย: <strong className="text-slate-800 font-semibold">นายวุฒิชัย จีปน</strong> (หัวหน้าโลจิสติกส์) & ทีมงานโลจิสติกส์ บริษัท สปริงเคิล มาร์เก็ตติ้ง จำกัด
-        </div>
-      </footer>
     </div>
   );
 }
