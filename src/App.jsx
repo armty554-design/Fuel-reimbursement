@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Fuel, 
   BarChart3, 
-  Settings, 
   Calendar, 
   LogOut,
   LayoutDashboard,
@@ -10,7 +9,6 @@ import {
 } from 'lucide-react';
 import MonthlyExecutiveDashboard from './components/MonthlyExecutiveDashboard';
 import SummaryDashboard from './components/SummaryDashboard';
-import BranchManagement from './components/BranchManagement';
 import LoginPage from './components/LoginPage';
 import seedData from './data/seedData.json';
 
@@ -26,7 +24,7 @@ export default function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'summary' | 'branches'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'summary'
   const [selectedBranch, setSelectedBranch] = useState('all');
   
   // App State initialized directly from seedData
@@ -164,23 +162,6 @@ export default function App() {
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
                 )}
               </button>
-
-              {/* Tab 3: Branch & Staff Settings */}
-              <button
-                onClick={() => setActiveTab('branches')}
-                className={`relative h-full flex items-center gap-2 px-3 sm:px-4 text-xs font-semibold transition-colors cursor-pointer ${
-                  activeTab === 'branches'
-                    ? 'text-blue-600'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">ข้อมูลสาขาและพนักงาน</span>
-                <span className="md:hidden">ข้อมูลสาขา</span>
-                {activeTab === 'branches' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
-                )}
-              </button>
             </nav>
 
             {/* Right: User Profile & Logout */}
@@ -241,20 +222,6 @@ export default function App() {
             allDailyOfficial={seedData.allDailyOfficial}
             allDriverSummaries={seedData.allDriverSummaries}
             basePrice={basePrice}
-          />
-        )}
-
-        {/* Tab 3: Branch & Vehicle Management */}
-        {activeTab === 'branches' && (
-          <BranchManagement
-            branches={branches}
-            setBranches={setBranches}
-            drivers={drivers}
-            setDrivers={setDrivers}
-            basePrice={basePrice}
-            setBasePrice={setBasePrice}
-            defaultFuelConsumption={defaultFuelConsumption}
-            setDefaultFuelConsumption={setDefaultFuelConsumption}
           />
         )}
       </main>

@@ -180,7 +180,7 @@ monthDefs.forEach(m => {
       const totalLitres = cleanNum(row[46]);
       const totalCompensation = cleanNum(row[47]);
       const branchName = row[67] ? row[67].trim() : '';
-      const deliveryUnits = cleanNum(row[69]);
+      const deliveryUnits = cleanNum(row[7]) || cleanNum(row[69]) || 0;
       const compPerTank = deliveryUnits > 0 ? totalCompensation / deliveryUnits : 0;
 
       // Match branch ID from vehicleNo (first 2 digits)

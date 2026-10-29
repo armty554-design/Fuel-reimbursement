@@ -33,14 +33,6 @@ export default function LoginPage({ staffUsers, onLogin }) {
     }
   };
 
-  // Sample accounts to demo quick click
-  const sampleLogins = [
-    { empId: '171904', name: 'นายปัณณธร ขันตี', role: 'หัวหน้าโลจิสติกส์ (บางพลี)' },
-    { empId: '171832', name: 'นายฤทธิศักดิ์ สระเงินสิงห์', role: 'หัวหน้าโลจิสติกส์ (สุขุมวิท 50)' },
-    { empId: '171785', name: 'นางสาวหทัยวรรณ แก้วดวงใหญ่', role: 'ผู้จัดการสาขา (บางพลี)' },
-    { empId: '171720', name: 'นายสถาพร', role: 'ผู้จัดการแผนก (ดูได้ทุกสาขา)' }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex flex-col justify-center items-center p-4">
       
@@ -99,43 +91,6 @@ export default function LoginPage({ staffUsers, onLogin }) {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Quick Demo Pickers */}
-          <div className="pt-4 border-t border-slate-100">
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-              <span>ตัวอย่างบัญชีพนักงานในระบบ:</span>
-              <span className="text-[10px] text-blue-600">(คลิกเพื่อทดสอบ)</span>
-            </div>
-            <div className="space-y-1.5">
-              {sampleLogins.map(acc => (
-                <button
-                  key={acc.empId}
-                  type="button"
-                  onClick={() => {
-                    setEmpIdInput(acc.empId);
-                    const user = staffUsers.find(u => u.empId === acc.empId);
-                    if (user) onLogin(user);
-                  }}
-                  className="w-full px-3 py-2 text-left rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition flex items-center justify-between text-xs group"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="tabular-nums font-bold text-slate-800 group-hover:text-blue-600">
-                      {acc.empId}
-                    </span>
-                    <span className="text-slate-600">{acc.name}</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
-                    {acc.role}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Footer info */}
-        <div className="text-center mt-6 text-xs text-slate-400/80">
-          ข้อมูลเชื่อมโยงกับ Google Sheets (แผ่นงานพนักงาน 177 รายชื่อ)
         </div>
       </div>
     </div>

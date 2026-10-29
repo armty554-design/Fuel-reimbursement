@@ -23,10 +23,12 @@ import {
   Search,
   ArrowUpDown,
   RotateCcw,
-  LayoutGrid
+  LayoutGrid,
+  Car
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import SprinkleExecutiveOverview from './SprinkleExecutiveOverview';
+import MultiSelectDropdown from './MultiSelectDropdown';
 
 export default function MonthlyExecutiveDashboard({
   monthList = [],
@@ -38,7 +40,8 @@ export default function MonthlyExecutiveDashboard({
   onSelectMonth
 }) {
   const [selectedMetric, setSelectedMetric] = useState('compensation'); // 'compensation' | 'mileage' | 'fuel' | 'price' | 'tanks'
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all'); // 'all' | '10' | '11' ... '98'
+  const [selectedBranches, setSelectedBranches] = useState([]); // [] = all
+  const [selectedVehicles, setSelectedVehicles] = useState([]); // [] = all
   const [viewMode, setViewMode] = useState('sprinkle'); // 'sprinkle' | 'analytics'
   
   // Matrix view controls
@@ -46,6 +49,8 @@ export default function MonthlyExecutiveDashboard({
   const [branchSearch, setBranchSearch] = useState('');
   const [branchSortBy, setBranchSortBy] = useState('comp'); // 'comp' | 'km' | 'tanks' | 'costPerTank' | 'id'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const isFiltered = selectedBranches.length > 0 || selectedVehicles.length > 0;
 
   // Master Branch Map for fast lookup
   const branchMap = useMemo(() => {
@@ -55,6 +60,34 @@ export default function MonthlyExecutiveDashboard({
     });
     return map;
   }, [branches]);
+
+  const branchOptions = useMemo(() => {
+    const latestMonth = monthList[monthList.length - 1]?.key || '10';
+    return branches.map(b => {
+      const count = (allDriverSummaries[latestMonth] || []).filter(d => d.branch === b.id).length;
+      return {
+        value: b.id,
+        label: `สาขา ${b.id} - ${b.name}`,
+        shortLabel: b.id,
+        subLabel: `${count} คัน`
+      };
+    });
+  }, [branches, monthList, allDriverSummaries]);
+
+  const vehicleOptions = useMemo(() => {
+    const latestMonth = monthList[monthList.length - 1]?.key || '10';
+    const drivers = allDriverSummaries[latestMonth] || [];
+    const list = selectedBranches.length === 0
+      ? drivers
+      : drivers.filter(d => selectedBranches.includes(d.branch));
+
+    return list.map(d => ({
+      value: d.vehicleNo,
+      label: d.vehicleNo,
+      shortLabel: d.vehicleNo,
+      subLabel: `${d.branchName || d.branch} (${d.fullName})`
+    })).sort((a, b) => a.value.localeCompare(b.value));
+  }, [allDriverSummaries, monthList, selectedBranches]);
 
   // Compute aggregated stats for each month (03 to 10)
   const allMonthlyData = useMemo(() => {
@@ -119,21 +152,28 @@ export default function MonthlyExecutiveDashboard({
     });
   }, [monthList, allDailyOfficial, allDriverSummaries, allFuelPrices, branches, basePrice]);
 
-  // Display Monthly Data filtered by selected branch
+  // Display Monthly Data filtered by selected branches & vehicles
   const monthlyData = useMemo(() => {
     let prevComp = 0;
     let prevKm = 0;
 
     return allMonthlyData.map((m, index) => {
-      if (selectedBranchFilter === 'all') {
+      if (!isFiltered) {
         return m;
       }
 
-      const bStat = m.branchStats[selectedBranchFilter] || { km: 0, comp: 0, tanks: 0, count: 0 };
-      const km = bStat.km;
-      const comp = bStat.comp;
+      const mKey = m.key;
+      const drivers = allDriverSummaries[mKey] || [];
+      const filteredDrivers = drivers.filter(d => {
+        const matchB = selectedBranches.length === 0 || selectedBranches.includes(d.branch);
+        const matchV = selectedVehicles.length === 0 || selectedVehicles.includes(d.vehicleNo);
+        return matchB && matchV;
+      });
+
+      const km = filteredDrivers.reduce((acc, d) => acc + (d.totalKm || 0), 0);
+      const comp = filteredDrivers.reduce((acc, d) => acc + (d.totalCompensation || 0), 0);
       const litres = parseFloat((km / 11.0).toFixed(2));
-      const tanks = bStat.tanks;
+      const tanks = filteredDrivers.reduce((acc, d) => acc + (d.deliveryUnits || 0), 0);
       const costPerTank = tanks > 0 ? parseFloat((comp / tanks).toFixed(2)) : 0;
       
       const momCompGrowth = index > 0 && prevComp > 0 ? ((comp - prevComp) / prevComp) * 100 : 0;
@@ -143,7 +183,7 @@ export default function MonthlyExecutiveDashboard({
 
       return {
         ...m,
-        driverCount: bStat.count,
+        driverCount: filteredDrivers.length,
         totalKm: parseFloat(km.toFixed(1)),
         totalLitres: litres,
         totalComp: parseFloat(comp.toFixed(2)),
@@ -153,22 +193,24 @@ export default function MonthlyExecutiveDashboard({
         momKmGrowth: parseFloat(momKmGrowth.toFixed(1))
       };
     });
-  }, [allMonthlyData, selectedBranchFilter]);
+  }, [allMonthlyData, isFiltered, selectedBranches, selectedVehicles, allDriverSummaries]);
 
-  // Active Branch Info
-  const activeBranchInfo = useMemo(() => {
-    if (selectedBranchFilter === 'all') {
-      return { id: 'all', name: 'ทุกสาขา (รวม 18 สาขา)', vehicleCount: 342 };
+  // Active Filter Info
+  const activeFilterInfo = useMemo(() => {
+    if (!isFiltered) {
+      return { name: 'ทุกสาขา (รวม 18 สาขา)', vehicleCount: 342 };
     }
-    const b = branchMap[selectedBranchFilter];
-    const latestMonth = allMonthlyData[allMonthlyData.length - 1];
-    const count = latestMonth?.branchStats[selectedBranchFilter]?.count || 0;
+    const bText = selectedBranches.length > 0 
+      ? `${selectedBranches.length} สาขาที่เลือก`
+      : 'ทุกสาขา';
+    const vText = selectedVehicles.length > 0
+      ? `${selectedVehicles.length} คันที่เลือก`
+      : '';
     return {
-      id: selectedBranchFilter,
-      name: b ? `สาขา ${b.id} - ${b.name}` : `สาขา ${selectedBranchFilter}`,
-      vehicleCount: count
+      name: [bText, vText].filter(Boolean).join(' • '),
+      vehicleCount: monthlyData[monthlyData.length - 1]?.driverCount || 0
     };
-  }, [selectedBranchFilter, branchMap, allMonthlyData]);
+  }, [isFiltered, selectedBranches, selectedVehicles, monthlyData]);
 
   // Annual Totals (YTD) based on current branch filter
   const ytdTotals = useMemo(() => {
@@ -254,8 +296,13 @@ export default function MonthlyExecutiveDashboard({
       sharePercent: totalPeriodComp > 0 ? parseFloat(((b.comp / totalPeriodComp) * 100).toFixed(1)) : 0
     }));
 
+    // Filter by selectedBranches if any
+    const branchFiltered = selectedBranches.length > 0
+      ? listWithShare.filter(b => selectedBranches.includes(b.id))
+      : listWithShare;
+
     // Filter by search
-    const filtered = listWithShare.filter(b => {
+    const filtered = branchFiltered.filter(b => {
       const term = branchSearch.trim().toLowerCase();
       if (!term) return true;
       return b.id.toLowerCase().includes(term) || b.name.toLowerCase().includes(term);
@@ -280,7 +327,7 @@ export default function MonthlyExecutiveDashboard({
       totalTanks: list.reduce((a, b) => a + b.tanks, 0),
       totalVehicles: list.reduce((a, b) => a + b.count, 0)
     };
-  }, [branches, allMonthlyData, matrixPeriod, branchSearch, branchSortBy, sortOrder]);
+  }, [branches, allMonthlyData, matrixPeriod, branchSearch, branchSortBy, sortOrder, selectedBranches]);
 
   // Export Executive Multi-Month Report
   const handleExportAllMonths = () => {
@@ -326,7 +373,7 @@ export default function MonthlyExecutiveDashboard({
   };
 
   const handleBranchSelect = (bId) => {
-    setSelectedBranchFilter(bId);
+    setSelectedBranches([bId]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -407,43 +454,52 @@ export default function MonthlyExecutiveDashboard({
         </div>
       </div>
 
-      {/* 🏢 Branch Filter Bar */}
+      {/* 🏢 Multi-select Branch & Vehicle Filter Bar */}
       <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2.5 bg-slate-100/90 px-3.5 py-2 rounded-2xl border border-slate-200">
-            <Building2 className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-semibold text-slate-500">กรองสาขา:</span>
-            <select
-              value={selectedBranchFilter}
-              onChange={(e) => setSelectedBranchFilter(e.target.value)}
-              className="bg-transparent font-bold text-slate-900 text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="all">ทุกสาขา (รวม 18 สาขา • 342 คัน)</option>
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>
-                  สาขา {b.id} - {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Multi-select Branch Filter */}
+          <MultiSelectDropdown
+            label="สาขา"
+            icon={Building2}
+            options={branchOptions}
+            selectedValues={selectedBranches}
+            onChange={setSelectedBranches}
+            placeholder="เลือกสาขา..."
+            allLabel="ทุกสาขา"
+          />
 
-          {selectedBranchFilter !== 'all' && (
+          {/* Multi-select Vehicle Filter */}
+          <MultiSelectDropdown
+            label="เบอร์รถ"
+            icon={Car}
+            options={vehicleOptions}
+            selectedValues={selectedVehicles}
+            onChange={setSelectedVehicles}
+            placeholder="เลือกเบอร์รถ..."
+            allLabel="ทุกคัน"
+          />
+
+          {/* Reset Filters */}
+          {isFiltered && (
             <button
-              onClick={() => setSelectedBranchFilter('all')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-2xl text-xs font-semibold border border-blue-200 transition cursor-pointer"
+              onClick={() => {
+                setSelectedBranches([]);
+                setSelectedVehicles([]);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-2xl text-xs font-semibold border border-red-200 transition cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>แสดงทุกสาขา (รีเซ็ต)</span>
+              <span>ล้างตัวกรอง ({selectedBranches.length + selectedVehicles.length})</span>
             </button>
           )}
         </div>
 
         <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>กำลังแสดงผล: <strong className="text-slate-800">{activeBranchInfo.name}</strong></span>
+          <span>กำลังแสดงผล: <strong className="text-slate-800">{activeFilterInfo.name}</strong></span>
           <span className="text-slate-300">•</span>
-          <span>{activeBranchInfo.vehicleCount} คัน</span>
+          <span>{activeFilterInfo.vehicleCount} คัน</span>
         </div>
 
       </div>

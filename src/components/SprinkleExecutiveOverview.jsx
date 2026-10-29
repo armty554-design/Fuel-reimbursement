@@ -107,51 +107,35 @@ export default function SprinkleExecutiveOverview({ onSelectMonth, onSwitchToAna
     <div className="space-y-6">
       
       {/* Action Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-sky-100 shadow-xs print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-400/20">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-slate-800">
-              มุมมองภาพรวมนำเสนอผู้บริหาร (Executive Sprinkle Overview)
-            </h2>
-            <p className="text-xs text-slate-500">
-              ออกแบบตามสไลด์สรุปทางการของ Sprinkle ดื่มสะอาด ปลอดภัย ส่งตรงถึงคุณ
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
+        {/* Toggle October */}
+        <button
+          onClick={() => setIncludeOctober(!includeOctober)}
+          className={`px-3.5 py-2 rounded-2xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+            includeOctober 
+              ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-xs' 
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <CheckCircle2 className={`w-3.5 h-3.5 ${includeOctober ? 'text-sky-600' : 'text-slate-400'}`} />
+          <span>{includeOctober ? 'แสดงรวม ต.ค. (10 เดือน)' : 'ม.ค. – ก.ย. (9 เดือน ตามสไลด์)'}</span>
+        </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Toggle October */}
-          <button
-            onClick={() => setIncludeOctober(!includeOctober)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-              includeOctober 
-                ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-xs' 
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <CheckCircle2 className={`w-3.5 h-3.5 ${includeOctober ? 'text-sky-600' : 'text-slate-400'}`} />
-            <span>{includeOctober ? 'แสดงรวม ต.ค. (10 เดือน)' : 'ม.ค. – ก.ย. (9 เดือน ตามสไลด์)'}</span>
-          </button>
+        <button
+          onClick={handleExportExcel}
+          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-md shadow-emerald-700/20 transition cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Excel (.xlsx)</span>
+        </button>
 
-          <button
-            onClick={handleExportExcel}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-md shadow-emerald-700/20 transition cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Excel (.xlsx)</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-slate-900/20 transition cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>พิมพ์ / PDF</span>
-          </button>
-        </div>
+        <button
+          onClick={handlePrint}
+          className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-slate-900/20 transition cursor-pointer"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          <span>พิมพ์ / PDF</span>
+        </button>
       </div>
 
       {/* 🌊 MAIN SPRINKLE EXECUTIVE INFOGRAPHIC BOARD 🌊 */}
