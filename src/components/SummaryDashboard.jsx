@@ -304,7 +304,7 @@ export default function SummaryDashboard({
         compPerTank: parseFloat(compPerTank.toFixed(2))
       };
     });
-  }, [activeDrivers, daysInMonth, records, fuelPrices, basePrice, selectedBranch, searchTerm]);
+  }, [activeDrivers, daysInMonth, records, fuelPrices, basePrice, isFiltered, searchTerm]);
 
   // Export to Excel (.xlsx)
   const handleExportExcel = () => {
@@ -346,7 +346,8 @@ export default function SummaryDashboard({
     const wsDriver = XLSX.utils.json_to_sheet(driverData);
     XLSX.utils.book_append_sheet(wb, wsDriver, 'สรุปรายบุคคล');
 
-    XLSX.writeFile(wb, `รายงานสรุปค่าชดเชยน้ำมัน_${monthName}_สาขา_${selectedBranch}.xlsx`);
+    const branchLabel = selectedBranches.length > 0 ? selectedBranches.join('-') : 'ทุกสาขา';
+    XLSX.writeFile(wb, `รายงานสรุปค่าชดเชยน้ำมัน_${monthName}_สาขา_${branchLabel}.xlsx`);
   };
 
   const handlePriceChange = (day, newPrice) => {
