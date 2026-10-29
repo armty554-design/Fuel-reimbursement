@@ -642,7 +642,7 @@ export default function MonthlyExecutiveDashboard({
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
                 <h3 className="font-bold text-slate-900 text-sm">
-                  แนวโน้มค่าชดเชยน้ำมัน vs ราคาน้ำมันดีเซล ({activeBranchInfo.name})
+                  แนวโน้มค่าชดเชยน้ำมัน vs ราคาน้ำมันดีเซล ({activeFilterInfo.name})
                 </h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -815,7 +815,7 @@ export default function MonthlyExecutiveDashboard({
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-600" />
               <h3 className="font-bold text-slate-900 text-sm">
-                ตารางเปรียบเทียบค่าชดเชยน้ำมันรายเดือน (8 เดือน ประจำปี 2569 - {activeBranchInfo.name})
+                ตารางเปรียบเทียบค่าชดเชยน้ำมันรายเดือน (8 เดือน ประจำปี 2569 - {activeFilterInfo.name})
               </h3>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
