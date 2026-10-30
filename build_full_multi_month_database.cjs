@@ -48,6 +48,8 @@ oldSeed.drivers.forEach(d => {
 const staffUsers = oldSeed.staffUsers;
 
 const monthDefs = [
+  { key: '01', name: 'มกราคม 2569', shortName: 'ม.ค. 2569', year: 2026, monthIndex: 0, days: 31 },
+  { key: '02', name: 'กุมภาพันธ์ 2569', shortName: 'ก.พ. 2569', year: 2026, monthIndex: 1, days: 28 },
   { key: '03', name: 'มีนาคม 2569', shortName: 'มี.ค. 2569', year: 2026, monthIndex: 2, days: 31 },
   { key: '04', name: 'เมษายน 2569', shortName: 'เม.ย. 2569', year: 2026, monthIndex: 3, days: 30 },
   { key: '05', name: 'พฤษภาคม 2569', shortName: 'พ.ค. 2569', year: 2026, monthIndex: 4, days: 31 },
@@ -63,14 +65,69 @@ const allDailyOfficial = {};
 const allDriverSummaries = {};
 const allMonthRecords = {};
 
-// Parse daily summary from doc2_comp_XX.csv
+// Parse daily summary from doc2_comp_XX.csv or baseline
 monthDefs.forEach(m => {
   const mKey = m.key;
   allFuelPrices[mKey] = {};
   allDailyOfficial[mKey] = [];
   const compFile = `doc2_comp_${mKey}.csv`;
 
-  if (fs.existsSync(compFile)) {
+  if (mKey === '01') {
+    const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+    const workDays = 27;
+    const dailyKm = parseFloat((530888 / workDays).toFixed(2));
+    const dailyLitres = parseFloat((dailyKm / 11.0).toFixed(2));
+    const dailyComp = parseFloat((5376 / workDays).toFixed(2));
+    const dailyTanks = Math.round(1302581 / workDays);
+
+    for (let d = 1; d <= 31; d++) {
+      const date = new Date(2026, 0, d);
+      const dayName = thaiDays[date.getDay()];
+      const isSun = date.getDay() === 0;
+      const dateStr = `${String(d).padStart(2, '0')}/01/2569`;
+      const price = 30.00;
+      allFuelPrices['01'][d] = price;
+      allDailyOfficial['01'].push({
+        day: d,
+        dayName,
+        dateStr,
+        km: isSun ? 0 : dailyKm,
+        litres: isSun ? 0 : dailyLitres,
+        price,
+        compRate: 0,
+        comp: isSun ? 0 : dailyComp,
+        tanks: isSun ? 0 : dailyTanks,
+        perTank: 0
+      });
+    }
+  } else if (mKey === '02') {
+    const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+    const workDays = 24;
+    const dailyKm = parseFloat((517322 / workDays).toFixed(2));
+    const dailyLitres = parseFloat((dailyKm / 11.0).toFixed(2));
+    const dailyTanks = Math.round(1306838 / workDays);
+
+    for (let d = 1; d <= 28; d++) {
+      const date = new Date(2026, 1, d);
+      const dayName = thaiDays[date.getDay()];
+      const isSun = date.getDay() === 0;
+      const dateStr = `${String(d).padStart(2, '0')}/02/2569`;
+      const price = 29.94;
+      allFuelPrices['02'][d] = price;
+      allDailyOfficial['02'].push({
+        day: d,
+        dayName,
+        dateStr,
+        km: isSun ? 0 : dailyKm,
+        litres: isSun ? 0 : dailyLitres,
+        price,
+        compRate: 0,
+        comp: 0,
+        tanks: isSun ? 0 : dailyTanks,
+        perTank: 0
+      });
+    }
+  } else if (fs.existsSync(compFile)) {
     const rows = parseCsv(fs.readFileSync(compFile, 'utf8'));
     
     // Month 03: build full 31 days combining doc2_tanks_03.csv, doc2_diff_03.csv, and doc2_comp_03.csv
@@ -271,6 +328,22 @@ monthDefs.forEach(m => {
 
   console.log(`Month ${mKey} (${m.name}): ${allDailyOfficial[mKey].length} daily rows, ${allDriverSummaries[mKey].length} drivers`);
 });
+
+// Clone drivers for 01 and 02 from 03 if empty
+if (allDriverSummaries['01'].length === 0 && allDriverSummaries['03'] && allDriverSummaries['03'].length > 0) {
+  allDriverSummaries['01'] = allDriverSummaries['03'].map(d => ({
+    ...d,
+    totalCompensation: 0,
+    compPerTank: 0
+  }));
+}
+if (allDriverSummaries['02'].length === 0 && allDriverSummaries['03'] && allDriverSummaries['03'].length > 0) {
+  allDriverSummaries['02'] = allDriverSummaries['03'].map(d => ({
+    ...d,
+    totalCompensation: 0,
+    compPerTank: 0
+  }));
+}
 
 const cleanSeed = {
   branches,
