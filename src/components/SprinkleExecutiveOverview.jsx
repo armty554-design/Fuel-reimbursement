@@ -17,6 +17,8 @@ import {
   Filter
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import truckImg from '../assets/sprinkle-truck.jpg';
+import bottleImg from '../assets/sprinkle-bottle.webp';
 
 export default function SprinkleExecutiveOverview({
   onSelectMonth,
@@ -496,33 +498,12 @@ export default function SprinkleExecutiveOverview({
           {/* Left: Sprinkle Delivery Truck Graphic */}
           <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
             <div className="relative group">
-              <div className="w-36 h-20 sm:w-44 sm:h-24 bg-gradient-to-br from-white to-sky-50 rounded-2xl p-2 border border-sky-200 shadow-sm flex items-center justify-center overflow-hidden">
-                <svg viewBox="0 0 160 90" className="w-full h-full drop-shadow-md">
-                  <rect x="0" y="0" width="160" height="90" rx="8" fill="#e0f2fe" />
-                  <rect x="0" y="72" width="160" height="18" fill="#94a3b8" />
-                  <line x1="0" y1="81" x2="160" y2="81" stroke="#cbd5e1" strokeDasharray="6 4" strokeWidth="2" />
-                  <path d="M 12 40 L 40 40 L 48 50 L 48 70 L 12 70 Z" fill="#ffffff" stroke="#0284c7" strokeWidth="1.5" />
-                  <path d="M 18 43 L 36 43 L 42 50 L 18 50 Z" fill="#38bdf8" opacity="0.6" />
-                  <circle cx="14" cy="62" r="3" fill="#facc15" />
-                  <rect x="10" y="65" width="8" height="5" rx="1" fill="#475569" />
-                  <rect x="46" y="24" width="98" height="46" rx="3" fill="#ffffff" stroke="#0284c7" strokeWidth="1.5" />
-                  <rect x="48" y="26" width="94" height="28" fill="#0284c7" rx="2" />
-                  <circle cx="58" cy="40" r="7" fill="#67e8f9" stroke="#ffffff" strokeWidth="1" />
-                  <circle cx="76" cy="40" r="7" fill="#67e8f9" stroke="#ffffff" strokeWidth="1" />
-                  <circle cx="94" cy="40" r="7" fill="#67e8f9" stroke="#ffffff" strokeWidth="1" />
-                  <circle cx="112" cy="40" r="7" fill="#67e8f9" stroke="#ffffff" strokeWidth="1" />
-                  <circle cx="130" cy="40" r="7" fill="#67e8f9" stroke="#ffffff" strokeWidth="1" />
-                  <text x="95" y="62" textAnchor="middle" fill="#0369a1" fontSize="9" fontWeight="900" fontFamily="sans-serif">
-                    SPRINKLE
-                  </text>
-                  <text x="95" y="68" textAnchor="middle" fill="#0284c7" fontSize="5" fontWeight="bold">
-                    1650
-                  </text>
-                  <circle cx="34" cy="72" r="9" fill="#1e293b" />
-                  <circle cx="34" cy="72" r="4" fill="#94a3b8" />
-                  <circle cx="120" cy="72" r="9" fill="#1e293b" />
-                  <circle cx="120" cy="72" r="4" fill="#94a3b8" />
-                </svg>
+              <div className="w-40 h-22 sm:w-52 sm:h-26 bg-white/95 rounded-2xl p-1.5 border border-sky-200 shadow-sm flex items-center justify-center overflow-hidden hover:shadow-md transition-shadow">
+                <img 
+                  src={truckImg} 
+                  alt="รถจัดส่งน้ำสปริงเคิล" 
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
           </div>
@@ -557,20 +538,12 @@ export default function SprinkleExecutiveOverview({
               </div>
             </div>
 
-            <div className="hidden sm:flex flex-col items-center">
-              <svg viewBox="0 0 60 90" className="w-12 h-20 drop-shadow-md">
-                <rect x="23" y="2" width="14" height="6" rx="2" fill="#ffffff" stroke="#0284c7" strokeWidth="1" />
-                <rect x="25" y="8" width="10" height="7" fill="#38bdf8" opacity="0.8" />
-                <path d="M 12 22 L 48 22 Q 52 22 52 28 L 52 78 Q 52 84 46 84 L 14 84 Q 8 84 8 78 L 8 28 Q 8 22 12 22 Z" fill="#0284c7" opacity="0.85" />
-                <line x1="8" y1="36" x2="52" y2="36" stroke="#ffffff" strokeWidth="1" opacity="0.5" />
-                <line x1="8" y1="48" x2="52" y2="48" stroke="#ffffff" strokeWidth="1" opacity="0.5" />
-                <line x1="8" y1="60" x2="52" y2="60" stroke="#ffffff" strokeWidth="1" opacity="0.5" />
-                <line x1="8" y1="72" x2="52" y2="72" stroke="#ffffff" strokeWidth="1" opacity="0.5" />
-                <rect x="12" y="44" width="36" height="18" rx="2" fill="#ffffff" opacity="0.9" />
-                <text x="30" y="56" textAnchor="middle" fill="#0369a1" fontSize="6" fontWeight="900">
-                  SPRINKLE
-                </text>
-              </svg>
+            <div className="hidden sm:flex flex-col items-center justify-center">
+              <img 
+                src={bottleImg} 
+                alt="ถังน้ำดื่มสปริงเคิล 18.9 ลิตร" 
+                className="w-16 h-24 sm:w-20 sm:h-28 object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300"
+              />
             </div>
           </div>
         </div>
