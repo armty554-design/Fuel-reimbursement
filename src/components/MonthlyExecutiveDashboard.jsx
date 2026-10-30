@@ -457,8 +457,11 @@ export default function MonthlyExecutiveDashboard({
             onSwitchToAnalytics={() => setViewMode('analytics')}
             selectedBranches={selectedBranches}
             selectedVehicles={selectedVehicles}
+            allDailyOfficial={allDailyOfficial}
+            allFuelPrices={allFuelPrices}
             allDriverSummaries={allDriverSummaries}
             monthList={monthList}
+            basePrice={basePrice}
           />
         </div>
       ) : (
