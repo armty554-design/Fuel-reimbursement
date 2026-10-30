@@ -869,7 +869,7 @@ export default function SprinkleExecutiveOverview({
             หมายเหตุ *ข้อมูลอาจมีการเปลี่ยนแปลง แผนการบันทึกเลขไมล์จริง และข้อมูล History ของ GPS ASIA
           </div>
           <div className="text-[11px] text-slate-500 font-medium">
-            บริษัท สปริงเคิล มาร์เก็ตติ้ง จำกัด (SPRINKLE DRINKING WATER)
+            บริษัท เอ็ม วอ.เตอร์ จำกัด
           </div>
         </div>
 
