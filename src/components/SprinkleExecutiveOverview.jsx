@@ -17,8 +17,8 @@ import {
   Filter
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import truckImg from '../assets/sprinkle-truck.jpg';
-import bottleImg from '../assets/sprinkle-bottle.webp';
+import truckImg from '../assets/sprinkle-truck.png';
+import bottleImg from '../assets/sprinkle-bottle.png';
 
 export default function SprinkleExecutiveOverview({
   onSelectMonth,
@@ -495,16 +495,14 @@ export default function SprinkleExecutiveOverview({
         {/* 🚛 Header Area Matching the Presentation Slide */}
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-sky-200/60">
           
-          {/* Left: Sprinkle Delivery Truck Graphic */}
-          <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
-            <div className="relative group">
-              <div className="w-40 h-22 sm:w-52 sm:h-26 bg-white/95 rounded-2xl p-1.5 border border-sky-200 shadow-sm flex items-center justify-center overflow-hidden hover:shadow-md transition-shadow">
-                <img 
-                  src={truckImg} 
-                  alt="รถจัดส่งน้ำสปริงเคิล" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
+          {/* Left: Sprinkle Delivery Truck Graphic (Transparent) */}
+          <div className="flex items-center w-full md:w-auto justify-center md:justify-start">
+            <div className="relative group flex items-center justify-center">
+              <img 
+                src={truckImg} 
+                alt="รถจัดส่งน้ำสปริงเคิล" 
+                className="w-48 sm:w-60 md:w-68 max-h-24 sm:max-h-28 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300" 
+              />
             </div>
           </div>
 
@@ -542,7 +540,7 @@ export default function SprinkleExecutiveOverview({
               <img 
                 src={bottleImg} 
                 alt="ถังน้ำดื่มสปริงเคิล 18.9 ลิตร" 
-                className="w-16 h-24 sm:w-20 sm:h-28 object-contain drop-shadow-lg hover:scale-105 transition-transform duration-300"
+                className="w-16 h-28 sm:w-20 sm:h-32 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
               />
             </div>
           </div>
