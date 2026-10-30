@@ -121,7 +121,7 @@ export default function App() {
                 </div>
                 <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>8 เดือนย้อนหลัง (มี.ค. – ต.ค. 2569) • 18 สาขา</span>
+                  <span>10 เดือน (ม.ค. – ต.ค. 2569) • 18 สาขา</span>
                 </div>
               </div>
             </div>

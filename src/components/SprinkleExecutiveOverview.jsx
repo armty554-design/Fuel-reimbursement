@@ -161,12 +161,13 @@ export default function SprinkleExecutiveOverview({
         officialComp = sumComp > 0 ? sumComp : 764186.21;
         officialTanks = sumTanks > 0 ? sumTanks : 1218198.00;
       } else if (activeDailyMonthKey === '01') {
-        officialKm = sumKm > 0 ? sumKm : 530888.00;
-        officialLitres = sumLitres > 0 ? sumLitres : 48262.55;
-        officialAvgPrice = 30.00;
-        officialAvgCompRate = 0.00;
-        officialComp = sumComp > 0 ? sumComp : 5376.00;
-        officialTanks = sumTanks > 0 ? sumTanks : 1302581.00;
+        officialKm = sumKm > 0 ? sumKm : 530888.33;
+        officialLitres = sumLitres > 0 ? sumLitres : 61066.72;
+        const activeDays = rawDaily.filter(d => (d.km || 0) > 0 && (d.price || 0) > 0);
+        officialAvgPrice = activeDays.length ? (activeDays.reduce((a, b) => a + (b.price || 0), 0) / activeDays.length) : 30.07;
+        officialAvgCompRate = Math.max(0, officialAvgPrice - basePrice);
+        officialComp = sumComp > 0 ? sumComp : 5372.42;
+        officialTanks = sumTanks > 0 ? sumTanks : 1258007.00;
       } else if (activeDailyMonthKey === '02') {
         officialKm = sumKm > 0 ? sumKm : 517322.00;
         officialLitres = sumLitres > 0 ? sumLitres : 47029.27;
@@ -265,7 +266,15 @@ export default function SprinkleExecutiveOverview({
   // -------------------------------------------------------------
   const monthlyData = useMemo(() => {
     // Official baseline for all 10 months (ม.ค. – ต.ค. 2569)
-    // Month 10 dynamically aggregates latest synced days from allDailyOfficial
+    // Month 01 and Month 10 dynamically aggregate latest synced days from allDailyOfficial (Google Sheets)
+    const d01 = allDailyOfficial['01'] || [];
+    const d01Km = d01.reduce((s, r) => s + (r.km || 0), 0) || 530888.33;
+    const d01Litres = d01.reduce((s, r) => s + (r.litres || 0), 0) || 61066.72;
+    const d01Comp = d01.reduce((s, r) => s + (r.comp || 0), 0) || 5372.42;
+    const d01Tanks = d01.reduce((s, r) => s + (r.tanks || 0), 0) || 1258007;
+    const d01Active = d01.filter(r => (r.km || 0) > 0 && (r.price || 0) > 0);
+    const d01Price = d01Active.length ? (d01Active.reduce((a, b) => a + (b.price || 0), 0) / d01Active.length) : 30.07;
+
     const d10 = allDailyOfficial['10'] || [];
     const d10Km = d10.reduce((s, r) => s + (r.km || 0), 0) || 516488.09;
     const d10Litres = d10.reduce((s, r) => s + (r.litres || 0), 0) || 59646.01;
@@ -275,7 +284,15 @@ export default function SprinkleExecutiveOverview({
     const d10Price = d10Active.length ? (d10Active.reduce((a, b) => a + (b.price || 0), 0) / d10Active.length) : 41.20;
 
     const officialBaseline = {
-      '01': { km: 530888.00, litres: 48262.55, price: 30.00, compRate: 0.00, comp: 5376.00, tanks: 1302581.00, perTank: 0.00 },
+      '01': { 
+        km: parseFloat(d01Km.toFixed(2)), 
+        litres: parseFloat(d01Litres.toFixed(2)), 
+        price: parseFloat(d01Price.toFixed(2)), 
+        compRate: parseFloat(Math.max(0, d01Price - basePrice).toFixed(2)), 
+        comp: parseFloat(d01Comp.toFixed(2)), 
+        tanks: d01Tanks, 
+        perTank: d01Tanks > 0 ? parseFloat((d01Comp / d01Tanks).toFixed(2)) : 0.00 
+      },
       '02': { km: 517322.00, litres: 47029.27, price: 29.94, compRate: 0.00, comp: 0.00, tanks: 1306838.00, perTank: 0.00 },
       '03': { km: 571870.00, litres: 65506.00, price: 32.10, compRate: 2.10, comp: 141231.30, tanks: 1457004.00, perTank: 0.10 },
       '04': { km: 541289.49, litres: 61648.86, price: 44.13, compRate: 14.13, comp: 863878.23, tanks: 1361662.00, perTank: 0.63 },
@@ -369,7 +386,7 @@ export default function SprinkleExecutiveOverview({
         costPerTank
       }
     };
-  }, [availableMonths, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice]);
+  }, [availableMonths, allDailyOfficial, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice]);
 
   // Current active data based on viewType
   const currentViewData = viewType === 'monthly' ? monthlyData : dailyData;

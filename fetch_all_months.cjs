@@ -15,6 +15,14 @@ function fetchUrl(url) {
 }
 
 const monthsToFetch = [
+  { 
+    key: '01', 
+    name: 'มกราคม 2569', 
+    compGid: '1705387900', 
+    diffGid: '2144916075',
+    tanksGid: '1580669641',
+    detailGid: '277935568'
+  },
   { key: '03', name: 'มีนาคม 2569', compGid: '1372603448', diffGid: '1766239945' },
   { key: '04', name: 'เมษายน 2569', compGid: '148629339', diffGid: '2074752255' },
   { key: '05', name: 'พฤษภาคม 2569', compGid: '448001912', diffGid: '1427241011' },
@@ -37,6 +45,18 @@ async function main() {
       const diffCsv = await fetchUrl(base + m.diffGid);
       fs.writeFileSync(`doc2_diff_${m.key}.csv`, diffCsv, 'utf8');
       console.log(`  Saved doc2_diff_${m.key}.csv (${diffCsv.length} bytes)`);
+
+      if (m.tanksGid) {
+        const tanksCsv = await fetchUrl(base + m.tanksGid);
+        fs.writeFileSync(`doc2_tanks_${m.key}.csv`, tanksCsv, 'utf8');
+        console.log(`  Saved doc2_tanks_${m.key}.csv (${tanksCsv.length} bytes)`);
+      }
+
+      if (m.detailGid) {
+        const detailCsv = await fetchUrl(base + m.detailGid);
+        fs.writeFileSync(`doc2_detail_${m.key}.csv`, detailCsv, 'utf8');
+        console.log(`  Saved doc2_detail_${m.key}.csv (${detailCsv.length} bytes)`);
+      }
     } catch (e) {
       console.error(`Error month ${m.key}:`, e.message);
     }

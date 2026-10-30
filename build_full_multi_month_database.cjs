@@ -72,35 +72,7 @@ monthDefs.forEach(m => {
   allDailyOfficial[mKey] = [];
   const compFile = `doc2_comp_${mKey}.csv`;
 
-  if (mKey === '01') {
-    const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
-    const workDays = 27;
-    const dailyKm = parseFloat((530888 / workDays).toFixed(2));
-    const dailyLitres = parseFloat((dailyKm / 11.0).toFixed(2));
-    const dailyComp = parseFloat((5376 / workDays).toFixed(2));
-    const dailyTanks = Math.round(1302581 / workDays);
-
-    for (let d = 1; d <= 31; d++) {
-      const date = new Date(2026, 0, d);
-      const dayName = thaiDays[date.getDay()];
-      const isSun = date.getDay() === 0;
-      const dateStr = `${String(d).padStart(2, '0')}/01/2569`;
-      const price = 30.00;
-      allFuelPrices['01'][d] = price;
-      allDailyOfficial['01'].push({
-        day: d,
-        dayName,
-        dateStr,
-        km: isSun ? 0 : dailyKm,
-        litres: isSun ? 0 : dailyLitres,
-        price,
-        compRate: 0,
-        comp: isSun ? 0 : dailyComp,
-        tanks: isSun ? 0 : dailyTanks,
-        perTank: 0
-      });
-    }
-  } else if (mKey === '02') {
+  if (mKey === '02' && !fs.existsSync(compFile)) {
     const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
     const workDays = 24;
     const dailyKm = parseFloat((517322 / workDays).toFixed(2));

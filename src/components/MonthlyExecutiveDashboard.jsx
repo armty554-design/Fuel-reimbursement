@@ -333,7 +333,7 @@ export default function MonthlyExecutiveDashboard({
   const handleExportAllMonths = () => {
     const wb = XLSX.utils.book_new();
 
-    // Sheet 1: เปรียบเทียบภาพรวมรายเดือน (8 เดือน)
+    // Sheet 1: เปรียบเทียบภาพรวมรายเดือน (10 เดือน)
     const summarySheetData = monthlyData.map((m, idx) => ({
       'ลำดับ': idx + 1,
       'เดือน': m.name,
@@ -481,7 +481,7 @@ export default function MonthlyExecutiveDashboard({
               แดชบอร์ดภาพรวมค่าชดเชยน้ำมันรายเดือน
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm mt-1.5 max-w-2xl leading-relaxed">
-              วิเคราะห์แนวโน้มเงินชดเชยค่าน้ำมันเปรียบเทียบ 8 เดือน (มีนาคม – ตุลาคม 2569) รวม 18 สาขา 
+              วิเคราะห์แนวโน้มเงินชดเชยค่าน้ำมันเปรียบเทียบ 10 เดือน (มกราคม – ตุลาคม 2569) รวม 18 สาขา 
               และเชื่อมโยงกับความผันผวนของราคาน้ำมันดีเซลรายวัน
             </p>
           </div>
@@ -492,7 +492,7 @@ export default function MonthlyExecutiveDashboard({
               className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-900/30 transition cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>ดาวน์โหลดรายงานรวม 8 เดือน (.xlsx)</span>
+              <span>ดาวน์โหลดรายงานรวม 10 เดือน (.xlsx)</span>
             </button>
           </div>
         </div>
@@ -818,7 +818,7 @@ export default function MonthlyExecutiveDashboard({
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-600" />
               <h3 className="font-bold text-slate-900 text-sm">
-                ตารางเปรียบเทียบค่าชดเชยน้ำมันรายเดือน (8 เดือน ประจำปี 2569 - {activeFilterInfo.name})
+                ตารางเปรียบเทียบค่าชดเชยน้ำมันรายเดือน (10 เดือน ประจำปี 2569 - {activeFilterInfo.name})
               </h3>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -928,7 +928,7 @@ export default function MonthlyExecutiveDashboard({
             </tbody>
             <tfoot className="bg-slate-100 font-extrabold text-slate-900 border-t-2 border-slate-300">
               <tr>
-                <td colSpan={4} className="py-4 px-4 text-center">รวมทั้งสิ้นสะสม 8 เดือน (YTD Total)</td>
+                <td colSpan={4} className="py-4 px-4 text-center">รวมทั้งสิ้นสะสม 10 เดือน (YTD Total)</td>
                 <td className="py-4 px-4 text-right tabular-nums text-sm">
                   {ytdTotals.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })} กม.
                 </td>
@@ -951,7 +951,7 @@ export default function MonthlyExecutiveDashboard({
                   ฿{ytdTotals.avgCostPerTank.toFixed(2)}
                 </td>
                 <td colSpan={2} className="py-4 px-4 text-center text-xs text-slate-400">
-                  ครบ 8 เดือน
+                  ครบ 10 เดือน
                 </td>
               </tr>
             </tfoot>
@@ -990,7 +990,7 @@ export default function MonthlyExecutiveDashboard({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                สะสมทั้งปี (8 เดือน)
+                สะสมทั้งปี (10 เดือน)
               </button>
               
               <select
@@ -1169,7 +1169,7 @@ export default function MonthlyExecutiveDashboard({
             <tfoot className="bg-slate-100 font-extrabold text-slate-900 sticky bottom-0 border-t-2 border-slate-300">
               <tr>
                 <td colSpan={3} className="py-4 px-4 text-center">
-                  รวมทั้งสิ้น 18 สาขา ({matrixPeriod === 'all' ? 'สะสม 8 เดือน' : monthList.find(m => m.key === matrixPeriod)?.name})
+                  รวมทั้งสิ้น 18 สาขา ({matrixPeriod === 'all' ? 'สะสม 10 เดือน' : monthList.find(m => m.key === matrixPeriod)?.name})
                 </td>
                 <td className="py-4 px-4 text-center tabular-nums text-sm">
                   {branchMatrixData.totalVehicles} คัน
