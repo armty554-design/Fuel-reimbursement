@@ -153,13 +153,12 @@ export default function SprinkleExecutiveOverview({
         officialComp = 863878.23;
         officialTanks = 1361662.00;
       } else if (activeDailyMonthKey === '10') {
-        officialKm = sumKm > 0 ? sumKm : 516488.09;
-        officialLitres = sumLitres > 0 ? sumLitres : 59646.01;
-        const activeDays = rawDaily.filter(d => (d.km || 0) > 0 && (d.price || 0) > 0);
-        officialAvgPrice = activeDays.length ? (activeDays.reduce((a, b) => a + (b.price || 0), 0) / activeDays.length) : 41.20;
-        officialAvgCompRate = Math.max(0, officialAvgPrice - basePrice);
-        officialComp = sumComp > 0 ? sumComp : 764186.21;
-        officialTanks = sumTanks > 0 ? sumTanks : 1218198.00;
+        officialKm = sumKm > 0 ? sumKm : 561513.33;
+        officialLitres = sumLitres > 0 ? sumLitres : 64456.39;
+        officialAvgPrice = 42.84;
+        officialAvgCompRate = 12.84;
+        officialComp = sumComp > 0 ? sumComp : 826463.64;
+        officialTanks = sumTanks > 0 ? sumTanks : 1379951.00;
       } else if (activeDailyMonthKey === '01') {
         officialKm = sumKm > 0 ? sumKm : 530888.33;
         officialLitres = sumLitres > 0 ? sumLitres : 61066.72;
@@ -276,12 +275,12 @@ export default function SprinkleExecutiveOverview({
     const d01Price = d01Active.length ? (d01Active.reduce((a, b) => a + (b.price || 0), 0) / d01Active.length) : 30.07;
 
     const d10 = allDailyOfficial['10'] || [];
-    const d10Km = d10.reduce((s, r) => s + (r.km || 0), 0) || 516488.09;
-    const d10Litres = d10.reduce((s, r) => s + (r.litres || 0), 0) || 59646.01;
-    const d10Comp = d10.reduce((s, r) => s + (r.comp || 0), 0) || 764186.21;
-    const d10Tanks = d10.reduce((s, r) => s + (r.tanks || 0), 0) || 1218198;
-    const d10Active = d10.filter(r => (r.km || 0) > 0 && (r.price || 0) > 0);
-    const d10Price = d10Active.length ? (d10Active.reduce((a, b) => a + (b.price || 0), 0) / d10Active.length) : 41.20;
+    const d10Km = d10.reduce((s, r) => s + (r.km || 0), 0) || 561513.33;
+    const d10Litres = d10.reduce((s, r) => s + (r.litres || 0), 0) || 64456.39;
+    const d10Comp = d10.reduce((s, r) => s + (r.comp || 0), 0) || 826463.64;
+    const d10Tanks = d10.reduce((s, r) => s + (r.tanks || 0), 0) || 1379951;
+    const d10Price = 42.84;
+    const d10CompRate = 12.84;
 
     const officialBaseline = {
       '01': { 
@@ -304,11 +303,11 @@ export default function SprinkleExecutiveOverview({
       '10': { 
         km: parseFloat(d10Km.toFixed(2)), 
         litres: parseFloat(d10Litres.toFixed(2)), 
-        price: parseFloat(d10Price.toFixed(2)), 
-        compRate: parseFloat(Math.max(0, d10Price - basePrice).toFixed(2)), 
+        price: d10Price, 
+        compRate: d10CompRate, 
         comp: parseFloat(d10Comp.toFixed(2)), 
         tanks: d10Tanks, 
-        perTank: d10Tanks > 0 ? parseFloat((d10Comp / d10Tanks).toFixed(2)) : 0.63 
+        perTank: d10Tanks > 0 ? parseFloat((d10Comp / d10Tanks).toFixed(2)) : 0.60 
       }
     };
 

@@ -30,7 +30,14 @@ const monthsToFetch = [
   { key: '07', name: 'กรกฎาคม 2569', compGid: '845798235', diffGid: '445467613' },
   { key: '08', name: 'สิงหาคม 2569', compGid: '1565238636', diffGid: '1456535403' },
   { key: '09', name: 'กันยายน 2569', compGid: '771609346', diffGid: '582576194' },
-  { key: '10', name: 'ตุลาคม 2569', compGid: '1923881986', diffGid: '1173352041' }
+  { 
+    key: '10', 
+    name: 'ตุลาคม 2569', 
+    compGid: '1923881986', 
+    diffGid: '1173352041',
+    tanksGid: '375387489',
+    detailGid: '29931557'
+  }
 ];
 
 async function main() {

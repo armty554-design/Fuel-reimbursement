@@ -36,8 +36,8 @@ export const SPRINKLE_OFFICIAL_DATA_9_MONTHS = {
         label: 'ระยะทาง (กม.)',
         type: 'int',
         values: [530888, 517322, 574536, 541283, 572233, 571553, 584025, 553385, 554226],
-        october: 497239,
-        total: 4999451
+        october: 561513,
+        total: 5063725
       },
       {
         id: 'members',
@@ -52,15 +52,15 @@ export const SPRINKLE_OFFICIAL_DATA_9_MONTHS = {
         label: 'ยอดส่ง (ถัง)',
         type: 'int',
         values: [1302581, 1306838, 1456665, 1361728, 1448155, 1431083, 1438490, 1386806, 1386152],
-        october: 1218198,
-        total: 12518498
+        october: 1379951,
+        total: 12680251
       },
       {
         id: 'tanksPerCustomer',
         label: 'การรับน้ำ (เฉลี่ยราย/ถัง)',
         type: 'int',
         values: [10, 10, 11, 11, 11, 11, 11, 11, 11],
-        october: 10,
+        october: 11,
         total: 11
       },
       {
@@ -68,7 +68,7 @@ export const SPRINKLE_OFFICIAL_DATA_9_MONTHS = {
         label: 'ระยะทาง (เฉลี่ย เมตร/ถัง)',
         type: 'int',
         values: [408, 396, 394, 397, 395, 399, 406, 399, 400],
-        october: 408,
+        october: 407,
         total: 399
       }
     ]
@@ -85,8 +85,8 @@ export const SPRINKLE_OFFICIAL_DATA_9_MONTHS = {
         type: 'int',
         isHighlight: true,
         values: [5376, 0, 142892, 863879, 729684, 608949, 404370, 481637, 651523],
-        october: 738162,
-        total: 3888310
+        october: 826464,
+        total: 3976612
       },
       {
         id: 'fuelCompPerTank',
@@ -94,7 +94,7 @@ export const SPRINKLE_OFFICIAL_DATA_9_MONTHS = {
         type: 'decimal',
         isHighlight: true,
         values: [0.00, 0.00, 0.10, 0.63, 0.50, 0.43, 0.28, 0.35, 0.47],
-        october: 0.61,
+        october: 0.60,
         total: 0.31
       }
     ]
