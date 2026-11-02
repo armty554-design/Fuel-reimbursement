@@ -120,7 +120,7 @@ export default function DailyEntryTable({
       const num = parseFloat(diffVal);
       if (!isNaN(num)) total += num;
     }
-    return total.toFixed(1);
+    return total.toFixed(2);
   };
 
   const computeDriverTotalCrm = (empId) => {
@@ -140,7 +140,7 @@ export default function DailyEntryTable({
       const num = parseFloat(empRecords[d]?.history);
       if (!isNaN(num)) total += num;
     }
-    return total.toFixed(1);
+    return total.toFixed(2);
   };
 
   return (

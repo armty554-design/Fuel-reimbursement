@@ -138,7 +138,7 @@ export default function MonthlyExecutiveDashboard({
         shortName: m.shortName || m.name.replace(' 2569', ''),
         days: m.days,
         driverCount: drivers.length,
-        totalKm: parseFloat(totalKm.toFixed(1)),
+        totalKm: parseFloat(totalKm.toFixed(2)),
         totalLitres: parseFloat(totalLitres.toFixed(2)),
         avgPrice: parseFloat(avgPrice.toFixed(2)),
         avgCompRate: parseFloat(Math.max(0, avgPrice - basePrice).toFixed(2)),
@@ -184,7 +184,7 @@ export default function MonthlyExecutiveDashboard({
       return {
         ...m,
         driverCount: filteredDrivers.length,
-        totalKm: parseFloat(km.toFixed(1)),
+        totalKm: parseFloat(km.toFixed(2)),
         totalLitres: litres,
         totalComp: parseFloat(comp.toFixed(2)),
         totalTanks: tanks,
@@ -282,7 +282,7 @@ export default function MonthlyExecutiveDashboard({
         id: b.id,
         name: b.name,
         count: bCount,
-        km: parseFloat(bKm.toFixed(1)),
+        km: parseFloat(bKm.toFixed(2)),
         litres,
         comp: parseFloat(bComp.toFixed(2)),
         tanks: bTanks,
@@ -563,7 +563,7 @@ export default function MonthlyExecutiveDashboard({
             <span className="text-xs text-slate-400 font-medium">กม.</span>
           </div>
           <div className="mt-2 text-[11px] text-emerald-700 font-semibold">
-            {ytdTotals.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })} กม. สุทธิ
+            {ytdTotals.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม. สุทธิ
           </div>
         </div>
 
@@ -883,7 +883,7 @@ export default function MonthlyExecutiveDashboard({
                       {m.driverCount}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums font-bold text-slate-800">
-                      {m.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })}
+                      {m.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums text-slate-700">
                       {m.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -930,7 +930,7 @@ export default function MonthlyExecutiveDashboard({
               <tr>
                 <td colSpan={4} className="py-4 px-4 text-center">รวมทั้งสิ้นสะสม 10 เดือน (YTD Total)</td>
                 <td className="py-4 px-4 text-right tabular-nums text-sm">
-                  {ytdTotals.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })} กม.
+                  {ytdTotals.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม.
                 </td>
                 <td className="py-4 px-4 text-right tabular-nums text-sm">
                   {ytdTotals.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -1111,7 +1111,7 @@ export default function MonthlyExecutiveDashboard({
                         {b.count} คัน
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums font-bold text-slate-800">
-                        {b.km.toLocaleString('th-TH', { minimumFractionDigits: 1 })}
+                        {b.km.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-4 text-right tabular-nums text-slate-700">
                         {b.litres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -1175,7 +1175,7 @@ export default function MonthlyExecutiveDashboard({
                   {branchMatrixData.totalVehicles} คัน
                 </td>
                 <td className="py-4 px-4 text-right tabular-nums text-sm">
-                  {branchMatrixData.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })} กม.
+                  {branchMatrixData.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม.
                 </td>
                 <td className="py-4 px-4 text-right tabular-nums text-sm">
                   {branchMatrixData.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}

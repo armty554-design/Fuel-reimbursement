@@ -350,7 +350,7 @@ export default function DailyBatchEntry({
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl font-bold tabular-nums text-emerald-800">
-              {dayTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 1 })}
+              {dayTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className="text-xs text-slate-400 font-medium">กิโลเมตร</span>
           </div>
@@ -622,7 +622,7 @@ export default function DailyBatchEntry({
                         {isSpecial ? (
                           <span className="text-slate-600 font-normal">{finalDiff}</span>
                         ) : finalDiff ? (
-                          <span>{parseFloat(finalDiff).toFixed(1)} <span className="text-[9px] font-normal text-slate-400">กม.</span></span>
+                          <span>{parseFloat(finalDiff).toFixed(2)} <span className="text-[9px] font-normal text-slate-400">กม.</span></span>
                         ) : (
                           <span className="text-slate-300">-</span>
                         )}

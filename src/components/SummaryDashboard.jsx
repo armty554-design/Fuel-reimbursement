@@ -230,7 +230,7 @@ export default function SummaryDashboard({
         dateStr: `${String(day).padStart(2, '0')}/${selectedMonthKey}/2569`,
         dieselPrice,
         compRate,
-        totalKm: parseFloat(totalKm.toFixed(1)),
+        totalKm: parseFloat(totalKm.toFixed(2)),
         totalLitres: parseFloat(totalLitres.toFixed(2)),
         totalCompensation: parseFloat(totalCompensation.toFixed(2)),
         activeVehicles,
@@ -297,7 +297,7 @@ export default function SummaryDashboard({
         ...driver,
         index: index + 1,
         workingDays: workingDays || driver.workingDays,
-        totalKm: parseFloat((totalKm || driver.totalKm).toFixed(1)),
+        totalKm: parseFloat((totalKm || driver.totalKm).toFixed(2)),
         totalLitres: parseFloat((totalLitres || driver.totalLitres).toFixed(2)),
         totalCompensation: parseFloat((totalCompensation || driver.totalCompensation).toFixed(2)),
         deliveryUnits,
@@ -516,7 +516,7 @@ export default function SummaryDashboard({
           </div>
           <div className="mt-3 flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tabular-nums text-slate-900">
-              {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+              {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className="text-xs text-slate-400 font-medium">กม.</span>
           </div>
@@ -653,7 +653,7 @@ export default function SummaryDashboard({
                       <td className={`py-2.5 px-3 text-right tabular-nums font-bold ${
                         isSunday ? 'text-red-600' : 'text-slate-800'
                       }`}>
-                        {row.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                        {row.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className={`py-2.5 px-3 text-right tabular-nums ${
                         isSunday ? 'text-red-600 font-medium' : 'text-slate-700'
@@ -693,7 +693,7 @@ export default function SummaryDashboard({
                 <tr>
                   <td colSpan={3} className="py-3.5 px-3 text-center">รวมทั้งสิ้นประจำเดือน {monthName}</td>
                   <td className="py-3.5 px-3 text-right tabular-nums text-sm">
-                    {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} กม.
+                    {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม.
                   </td>
                   <td className="py-3.5 px-3 text-right tabular-nums text-sm">
                     {grandTotalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -795,7 +795,7 @@ export default function SummaryDashboard({
                         {row.workingDays} วัน
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums font-bold text-slate-800">
-                        {row.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} กม.
+                        {row.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม.
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums text-slate-700">
                         {row.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -817,7 +817,7 @@ export default function SummaryDashboard({
                 <tr>
                   <td colSpan={7} className="py-3.5 px-3 text-center">รวมทั้งสิ้นประจำเดือน {monthName}</td>
                   <td className="py-3.5 px-3 text-right tabular-nums text-sm">
-                    {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} กม.
+                    {grandTotalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กม.
                   </td>
                   <td className="py-3.5 px-3 text-right tabular-nums text-sm">
                     {grandTotalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
