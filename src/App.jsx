@@ -10,6 +10,7 @@ import {
 import MonthlyExecutiveDashboard from './components/MonthlyExecutiveDashboard';
 import SummaryDashboard from './components/SummaryDashboard';
 import LoginPage from './components/LoginPage';
+import LiveSyncManager from './components/LiveSyncManager';
 import seedData from './data/seedData.json';
 
 const STORAGE_KEY = 'fuel_app_state_v6';
@@ -51,6 +52,10 @@ export default function App() {
   
   // Dynamic fuel prices dictionary per month
   const [allFuelPrices, setAllFuelPrices] = useState(() => seedData.allFuelPrices || {});
+
+  // Real-time synced daily official data & driver summaries
+  const [allDailyOfficial, setAllDailyOfficial] = useState(() => seedData.allDailyOfficial || {});
+  const [allDriverSummaries, setAllDriverSummaries] = useState(() => seedData.allDriverSummaries || {});
 
   const staffUsers = seedData.staffUsers || [];
   const monthList = seedData.monthList || [];
@@ -191,12 +196,24 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Real-time Live Sync Manager from Google Sheets */}
+        <LiveSyncManager
+          allDailyOfficial={allDailyOfficial}
+          setAllDailyOfficial={setAllDailyOfficial}
+          allDriverSummaries={allDriverSummaries}
+          setAllDriverSummaries={setAllDriverSummaries}
+          allFuelPrices={allFuelPrices}
+          setAllFuelPrices={setAllFuelPrices}
+          selectedMonthKey={selectedMonthKey}
+          basePrice={basePrice}
+        />
+
         {/* Tab 1: Executive Monthly Dashboard */}
         {activeTab === 'dashboard' && (
           <MonthlyExecutiveDashboard
             monthList={monthList}
-            allDailyOfficial={seedData.allDailyOfficial}
-            allDriverSummaries={seedData.allDriverSummaries}
+            allDailyOfficial={allDailyOfficial}
+            allDriverSummaries={allDriverSummaries}
             allFuelPrices={allFuelPrices}
             branches={branches}
             basePrice={basePrice}
@@ -219,8 +236,8 @@ export default function App() {
             allMonthRecords={seedData.allMonthRecords}
             allFuelPrices={allFuelPrices}
             setAllFuelPrices={setAllFuelPrices}
-            allDailyOfficial={seedData.allDailyOfficial}
-            allDriverSummaries={seedData.allDriverSummaries}
+            allDailyOfficial={allDailyOfficial}
+            allDriverSummaries={allDriverSummaries}
             basePrice={basePrice}
           />
         )}
