@@ -73,32 +73,9 @@ monthDefs.forEach(m => {
   const compFile = `doc2_comp_${mKey}.csv`;
 
   if (mKey === '02' && !fs.existsSync(compFile)) {
-    const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
-    const workDays = 24;
-    const dailyKm = parseFloat((517322 / workDays).toFixed(2));
-    const dailyLitres = parseFloat((dailyKm / 11.0).toFixed(2));
-    const dailyTanks = Math.round(1306838 / workDays);
-
-    for (let d = 1; d <= 28; d++) {
-      const date = new Date(2026, 1, d);
-      const dayName = thaiDays[date.getDay()];
-      const isSun = date.getDay() === 0;
-      const dateStr = `${String(d).padStart(2, '0')}/02/2569`;
-      const price = 29.94;
-      allFuelPrices['02'][d] = price;
-      allDailyOfficial['02'].push({
-        day: d,
-        dayName,
-        dateStr,
-        km: isSun ? 0 : dailyKm,
-        litres: isSun ? 0 : dailyLitres,
-        price,
-        compRate: 0,
-        comp: 0,
-        tanks: isSun ? 0 : dailyTanks,
-        perTank: 0
-      });
-    }
+    // February 2569: ยังไม่มีข้อมูลเดือนนี้ ให้ว่างไว้ก่อน
+    allDailyOfficial['02'] = [];
+    allFuelPrices['02'] = {};
   } else if (fs.existsSync(compFile)) {
     const rows = parseCsv(fs.readFileSync(compFile, 'utf8'));
     
@@ -309,13 +286,8 @@ if (allDriverSummaries['01'].length === 0 && allDriverSummaries['03'] && allDriv
     compPerTank: 0
   }));
 }
-if (allDriverSummaries['02'].length === 0 && allDriverSummaries['03'] && allDriverSummaries['03'].length > 0) {
-  allDriverSummaries['02'] = allDriverSummaries['03'].map(d => ({
-    ...d,
-    totalCompensation: 0,
-    compPerTank: 0
-  }));
-}
+// Keep month 02 empty as requested (ยังไม่มีข้อมูลเดือนนี้ ให้ว่างไว้ก่อน)
+allDriverSummaries['02'] = [];
 
 const cleanSeed = {
   branches,

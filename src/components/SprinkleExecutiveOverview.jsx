@@ -168,12 +168,13 @@ export default function SprinkleExecutiveOverview({
         officialComp = sumComp > 0 ? sumComp : 5372.42;
         officialTanks = sumTanks > 0 ? sumTanks : 1258007.00;
       } else if (activeDailyMonthKey === '02') {
-        officialKm = sumKm > 0 ? sumKm : 517322.00;
-        officialLitres = sumLitres > 0 ? sumLitres : 47029.27;
-        officialAvgPrice = 29.94;
-        officialAvgCompRate = 0.00;
-        officialComp = sumComp > 0 ? sumComp : 0.00;
-        officialTanks = sumTanks > 0 ? sumTanks : 1306838.00;
+        // กุมภาพันธ์ 2569: ยังไม่มีข้อมูลเดือนนี้ ให้ว่างไว้ก่อน
+        officialKm = sumKm;
+        officialLitres = sumLitres;
+        officialAvgPrice = 0;
+        officialAvgCompRate = 0;
+        officialComp = sumComp;
+        officialTanks = sumTanks;
       } else if (activeDailyMonthKey === '03') {
         officialKm = 571870.00;
         officialLitres = 65506.00;
@@ -292,7 +293,7 @@ export default function SprinkleExecutiveOverview({
         tanks: d01Tanks, 
         perTank: d01Tanks > 0 ? parseFloat((d01Comp / d01Tanks).toFixed(2)) : 0.00 
       },
-      '02': { km: 517322.00, litres: 47029.27, price: 29.94, compRate: 0.00, comp: 0.00, tanks: 1306838.00, perTank: 0.00 },
+      '02': { km: 0, litres: 0, price: 0, compRate: 0, comp: 0, tanks: 0, perTank: 0, isEmpty: true },
       '03': { km: 571870.00, litres: 65506.00, price: 32.10, compRate: 2.10, comp: 141231.30, tanks: 1457004.00, perTank: 0.10 },
       '04': { km: 541289.49, litres: 61648.86, price: 44.13, compRate: 14.13, comp: 863878.23, tanks: 1361662.00, perTank: 0.63 },
       '05': { km: 572233.15, litres: 65249.94, price: 41.13, compRate: 11.13, comp: 728457.51, tanks: 1447946.00, perTank: 0.50 },
@@ -348,11 +349,15 @@ export default function SprinkleExecutiveOverview({
         perTank = tanks > 0 ? comp / tanks : 0;
       }
 
-      sumKm += km;
-      sumLitres += litres;
-      sumComp += comp;
-      sumTanks += tanks;
-      weightedPriceSum += price * km;
+      const isEmpty = base.isEmpty || (km === 0 && litres === 0 && comp === 0);
+
+      if (!isEmpty && km > 0) {
+        sumKm += km;
+        sumLitres += litres;
+        sumComp += comp;
+        sumTanks += tanks;
+        weightedPriceSum += price * km;
+      }
 
       return {
         key: mKey,
@@ -365,7 +370,8 @@ export default function SprinkleExecutiveOverview({
         compRate,
         comp,
         tanks,
-        perTank
+        perTank,
+        isEmpty
       };
     });
 
@@ -746,106 +752,122 @@ export default function SprinkleExecutiveOverview({
                         </div>
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums font-medium text-slate-800">
-                        {row.km.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {row.isEmpty ? '-' : row.km.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums text-slate-700">
-                        {row.litres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {row.isEmpty ? '-' : row.litres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums font-medium text-slate-800">
-                        {row.price.toFixed(2)}
+                        {row.isEmpty || row.price === 0 ? '-' : row.price.toFixed(2)}
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums text-slate-700">
-                        {row.compRate.toFixed(2)}
+                        {row.isEmpty ? '-' : row.compRate.toFixed(2)}
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums font-bold text-[#074b83] bg-sky-50/20 text-sm">
-                        {row.comp.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {row.isEmpty ? '-' : row.comp.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-3 text-right border-r border-slate-100 tabular-nums font-medium text-slate-800">
-                        {row.tanks.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {row.isEmpty ? '-' : row.tanks.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-bold text-slate-900">
-                        {row.perTank.toFixed(2)}
+                        {row.isEmpty ? '-' : row.perTank.toFixed(2)}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => {
-                            setActiveDailyMonthKey(row.key);
-                            setViewType('daily');
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-[#074b83] rounded-xl text-[11px] font-bold transition cursor-pointer"
-                          title="คลิกเพื่อเปิดดูรายละเอียดรายวันของเดือนนี้"
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span>ดูรายวัน</span>
-                        </button>
+                        {row.isEmpty ? (
+                          <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl">
+                            ยังไม่มีข้อมูล
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setActiveDailyMonthKey(row.key);
+                              setViewType('daily');
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-[#074b83] rounded-xl text-[11px] font-bold transition cursor-pointer"
+                            title="คลิกเพื่อเปิดดูรายละเอียดรายวันของเดือนนี้"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>ดูรายวัน</span>
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
-                ) : (
-                  // ------------------------------------------
-                  // ROWS FOR "แบบรายวัน" (Daily Rows)
-                  // ------------------------------------------
-                  dailyData.rows.map(row => {
-                    const isSunday = row.isSunday;
+                ) : dailyData.rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Calendar className="w-8 h-8 text-slate-300" />
+                          <span className="font-semibold text-slate-600 text-sm">ยังไม่มีข้อมูลประจำเดือน {currentDailyMonth?.name || 'กุมภาพันธ์ 2569'}</span>
+                          <span className="text-xs text-slate-400">ยังไม่มีบันทึกข้อมูลในเดือนนี้ ให้ว่างไว้ก่อน</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    // ------------------------------------------
+                    // ROWS FOR "แบบรายวัน" (Daily Rows)
+                    // ------------------------------------------
+                    dailyData.rows.map(row => {
+                      const isSunday = row.isSunday;
 
-                    return (
-                      <tr 
-                        key={row.day}
-                        className={`transition-colors ${
-                          isSunday 
-                            ? 'bg-red-50/70 text-red-600 font-bold hover:bg-red-100/60' 
-                            : 'hover:bg-sky-50/40 text-slate-800'
-                        }`}
-                      >
-                        <td className={`py-2 px-3 text-center border-r border-slate-100 font-semibold ${
-                          isSunday ? 'text-red-600' : 'text-slate-700'
-                        }`}>
-                          {row.dayName}
-                        </td>
-                        <td className={`py-2 px-3 text-center border-r border-slate-100 tabular-nums ${
-                          isSunday ? 'text-red-600' : 'text-slate-700'
-                        }`}>
-                          {row.dateStr}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums font-medium ${
-                          isSunday ? 'text-red-600' : 'text-slate-800'
-                        }`}>
-                          {row.km > 0 ? row.km.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
-                          isSunday ? 'text-red-600' : 'text-slate-700'
-                        }`}>
-                          {row.litres > 0 ? row.litres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
-                          isSunday ? 'text-red-600' : 'text-slate-800 font-medium'
-                        }`}>
-                          {row.price.toFixed(2)}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
-                          isSunday ? 'text-red-600' : 'text-slate-700'
-                        }`}>
-                          {row.compRate.toFixed(2)}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums font-bold ${
-                          isSunday ? 'text-red-600' : 'text-[#074b83] bg-sky-50/20'
-                        }`}>
-                          {row.comp > 0 ? row.comp.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                        </td>
-                        <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
-                          isSunday ? 'text-red-600' : 'text-slate-800 font-medium'
-                        }`}>
-                          {row.tanks > 0 ? row.tanks.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                        </td>
-                        <td className={`py-2 px-3 text-right tabular-nums font-bold ${
-                          isSunday ? 'text-red-600' : 'text-slate-900'
-                        }`}>
-                          {row.perTank > 0 ? row.perTank.toFixed(2) : '0.00'}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                      return (
+                        <tr 
+                          key={row.day}
+                          className={`transition-colors ${
+                            isSunday 
+                              ? 'bg-red-50/70 text-red-600 font-bold hover:bg-red-100/60' 
+                              : 'hover:bg-sky-50/40 text-slate-800'
+                          }`}
+                        >
+                          <td className={`py-2 px-3 text-center border-r border-slate-100 font-semibold ${
+                            isSunday ? 'text-red-600' : 'text-slate-700'
+                          }`}>
+                            {row.dayName}
+                          </td>
+                          <td className={`py-2 px-3 text-center border-r border-slate-100 tabular-nums ${
+                            isSunday ? 'text-red-600' : 'text-slate-700'
+                          }`}>
+                            {row.dateStr}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums font-medium ${
+                            isSunday ? 'text-red-600' : 'text-slate-800'
+                          }`}>
+                            {row.km > 0 ? row.km.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
+                            isSunday ? 'text-red-600' : 'text-slate-700'
+                          }`}>
+                            {row.litres > 0 ? row.litres.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
+                            isSunday ? 'text-red-600' : 'text-slate-800 font-medium'
+                          }`}>
+                            {row.price > 0 ? row.price.toFixed(2) : '-'}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
+                            isSunday ? 'text-red-600' : 'text-slate-700'
+                          }`}>
+                            {row.compRate > 0 ? row.compRate.toFixed(2) : '0.00'}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums font-bold ${
+                            isSunday ? 'text-red-600' : 'text-[#074b83] bg-sky-50/20'
+                          }`}>
+                            {row.comp > 0 ? row.comp.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                          </td>
+                          <td className={`py-2 px-3 text-right border-r border-slate-100 tabular-nums ${
+                            isSunday ? 'text-red-600' : 'text-slate-800 font-medium'
+                          }`}>
+                            {row.tanks > 0 ? row.tanks.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                          </td>
+                          <td className={`py-2 px-3 text-right tabular-nums font-bold ${
+                            isSunday ? 'text-red-600' : 'text-slate-900'
+                          }`}>
+                            {row.perTank > 0 ? row.perTank.toFixed(2) : '0.00'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
               </tbody>
 
               {/* 🏆 Dark Blue Footer Summary Row Matching the Slide Exactly */}

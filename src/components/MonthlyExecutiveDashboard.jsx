@@ -109,11 +109,12 @@ export default function MonthlyExecutiveDashboard({
       const avgPrice = priceVals.length ? (priceVals.reduce((a, b) => a + b, 0) / priceVals.length) : 0;
       const costPerTank = totalTanks > 0 ? (totalComp / totalTanks) : 0;
 
-      // Month-over-Month (MoM) Growth
-      const momCompGrowth = index > 0 && prevComp > 0 ? ((totalComp - prevComp) / prevComp) * 100 : 0;
-      const momKmGrowth = index > 0 && prevKm > 0 ? ((totalKm - prevKm) / prevKm) * 100 : 0;
-      prevComp = totalComp;
-      prevKm = totalKm;
+      // Month-over-Month (MoM) Growth (only for months with data)
+      const hasData = totalKm > 0 || totalComp > 0;
+      const momCompGrowth = index > 0 && prevComp > 0 && totalComp > 0 ? ((totalComp - prevComp) / prevComp) * 100 : 0;
+      const momKmGrowth = index > 0 && prevKm > 0 && totalKm > 0 ? ((totalKm - prevKm) / prevKm) * 100 : 0;
+      if (totalComp > 0) prevComp = totalComp;
+      if (totalKm > 0) prevKm = totalKm;
 
       // Branch breakdown
       const branchStats = {};
@@ -147,7 +148,8 @@ export default function MonthlyExecutiveDashboard({
         costPerTank: parseFloat(costPerTank.toFixed(2)),
         momCompGrowth: parseFloat(momCompGrowth.toFixed(1)),
         momKmGrowth: parseFloat(momKmGrowth.toFixed(1)),
-        branchStats
+        branchStats,
+        isEmpty: !hasData
       };
     });
   }, [monthList, allDailyOfficial, allDriverSummaries, allFuelPrices, branches, basePrice]);
@@ -176,10 +178,11 @@ export default function MonthlyExecutiveDashboard({
       const tanks = filteredDrivers.reduce((acc, d) => acc + (d.deliveryUnits || 0), 0);
       const costPerTank = tanks > 0 ? parseFloat((comp / tanks).toFixed(2)) : 0;
       
-      const momCompGrowth = index > 0 && prevComp > 0 ? ((comp - prevComp) / prevComp) * 100 : 0;
-      const momKmGrowth = index > 0 && prevKm > 0 ? ((km - prevKm) / prevKm) * 100 : 0;
-      prevComp = comp;
-      prevKm = km;
+      const hasFilteredData = km > 0 || comp > 0;
+      const momCompGrowth = index > 0 && prevComp > 0 && comp > 0 ? ((comp - prevComp) / prevComp) * 100 : 0;
+      const momKmGrowth = index > 0 && prevKm > 0 && km > 0 ? ((km - prevKm) / prevKm) * 100 : 0;
+      if (comp > 0) prevComp = comp;
+      if (km > 0) prevKm = km;
 
       return {
         ...m,
@@ -190,7 +193,8 @@ export default function MonthlyExecutiveDashboard({
         totalTanks: tanks,
         costPerTank,
         momCompGrowth: parseFloat(momCompGrowth.toFixed(1)),
-        momKmGrowth: parseFloat(momKmGrowth.toFixed(1))
+        momKmGrowth: parseFloat(momKmGrowth.toFixed(1)),
+        isEmpty: !hasFilteredData
       };
     });
   }, [allMonthlyData, isFiltered, selectedBranches, selectedVehicles, allDriverSummaries]);
@@ -218,7 +222,8 @@ export default function MonthlyExecutiveDashboard({
     const totalKm = monthlyData.reduce((acc, m) => acc + m.totalKm, 0);
     const totalLitres = monthlyData.reduce((acc, m) => acc + m.totalLitres, 0);
     const totalTanks = monthlyData.reduce((acc, m) => acc + m.totalTanks, 0);
-    const avgPrice = monthlyData.length ? (monthlyData.reduce((acc, m) => acc + m.avgPrice, 0) / monthlyData.length) : 0;
+    const activeMonths = monthlyData.filter(m => m.totalKm > 0 || m.totalComp > 0);
+    const avgPrice = activeMonths.length ? (activeMonths.reduce((acc, m) => acc + m.avgPrice, 0) / activeMonths.length) : 0;
     const avgCostPerTank = totalTanks > 0 ? (totalComp / totalTanks) : 0;
 
     return {
@@ -880,31 +885,31 @@ export default function MonthlyExecutiveDashboard({
                       {m.days}
                     </td>
                     <td className="py-3.5 px-3 text-center tabular-nums font-semibold text-slate-700">
-                      {m.driverCount}
+                      {m.isEmpty ? '-' : m.driverCount}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums font-bold text-slate-800">
-                      {m.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {m.isEmpty ? '-' : m.totalKm.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums text-slate-700">
-                      {m.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      {m.isEmpty ? '-' : m.totalLitres.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums text-purple-700 font-semibold">
-                      ฿{m.avgPrice.toFixed(2)}
+                      {m.isEmpty || m.avgPrice === 0 ? '-' : `฿${m.avgPrice.toFixed(2)}`}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums text-slate-500">
-                      ฿{m.avgCompRate.toFixed(2)}
+                      {m.isEmpty ? '-' : `฿${m.avgCompRate.toFixed(2)}`}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums font-extrabold text-blue-900 bg-blue-50/50 text-sm group-hover:bg-blue-100/50 transition">
-                      ฿{m.totalComp.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      {m.isEmpty ? '-' : `฿${m.totalComp.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums text-slate-700">
-                      {m.totalTanks.toLocaleString('th-TH')}
+                      {m.isEmpty || m.totalTanks === 0 ? '-' : m.totalTanks.toLocaleString('th-TH')}
                     </td>
                     <td className="py-3.5 px-4 text-right tabular-nums font-bold text-emerald-700">
-                      ฿{m.costPerTank.toFixed(2)}
+                      {m.isEmpty ? '-' : `฿${m.costPerTank.toFixed(2)}`}
                     </td>
                     <td className="py-3.5 px-4 text-center tabular-nums font-bold">
-                      {idx === 0 ? (
+                      {m.isEmpty || idx === 0 || m.momCompGrowth === 0 ? (
                         <span className="text-slate-300">-</span>
                       ) : (
                         <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] ${
@@ -916,11 +921,17 @@ export default function MonthlyExecutiveDashboard({
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 group-hover:bg-blue-600 text-blue-700 group-hover:text-white rounded-xl text-xs font-bold transition-all shadow-2xs">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>เปิดรายงานสรุป</span>
-                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
+                      {m.isEmpty ? (
+                        <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-xl">
+                          ยังไม่มีข้อมูล
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 group-hover:bg-blue-600 text-blue-700 group-hover:text-white rounded-xl text-xs font-bold transition-all shadow-2xs">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>เปิดรายงานสรุป</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );

@@ -626,7 +626,18 @@ export default function SummaryDashboard({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {dailySummary.map(row => {
+                {grandTotalKm === 0 && grandTotalCompensation === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="py-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Calendar className="w-8 h-8 text-slate-300" />
+                        <span className="font-semibold text-slate-600 text-sm">ยังไม่มีข้อมูลประจำเดือน {monthName}</span>
+                        <span className="text-xs text-slate-400">ยังไม่มีบันทึกข้อมูลในเดือนนี้ ให้ว่างไว้ก่อน</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  dailySummary.map(row => {
                   const isSunday = row.dayName === 'อาทิตย์';
                   return (
                     <tr 
@@ -687,7 +698,7 @@ export default function SummaryDashboard({
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
               <tfoot className="bg-slate-100 font-extrabold text-slate-900 sticky bottom-0 border-t-2 border-slate-300">
                 <tr>
@@ -760,8 +771,8 @@ export default function SummaryDashboard({
               <tbody className="divide-y divide-slate-100">
                 {driverSummary.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-slate-400">
-                      ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+                    <td colSpan={12} className="text-center py-12 text-slate-400 font-medium">
+                      {grandTotalKm === 0 ? `ยังไม่มีข้อมูลประจำเดือน ${monthName} (ให้ว่างไว้ก่อน)` : 'ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา'}
                     </td>
                   </tr>
                 ) : (
