@@ -536,11 +536,6 @@ export default function SprinkleExecutiveOverview({
                     }`}
                   >
                     <span>{m.shortName || m.name}</span>
-                    {m.key === '09' && (
-                      <span className="text-[9px] bg-yellow-400 text-slate-900 px-1 rounded-sm font-extrabold">
-                        รูป
-                      </span>
-                    )}
                   </button>
                 );
               })}
