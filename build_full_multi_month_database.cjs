@@ -57,7 +57,8 @@ const monthDefs = [
   { key: '07', name: 'กรกฎาคม 2569', shortName: 'ก.ค. 2569', year: 2026, monthIndex: 6, days: 31 },
   { key: '08', name: 'สิงหาคม 2569', shortName: 'ส.ค. 2569', year: 2026, monthIndex: 7, days: 31 },
   { key: '09', name: 'กันยายน 2569', shortName: 'ก.ย. 2569', year: 2026, monthIndex: 8, days: 30 },
-  { key: '10', name: 'ตุลาคม 2569', shortName: 'ต.ค. 2569', year: 2026, monthIndex: 9, days: 31 }
+  { key: '10', name: 'ตุลาคม 2569', shortName: 'ต.ค. 2569', year: 2026, monthIndex: 9, days: 31 },
+  { key: '11', name: 'พฤศจิกายน 2569', shortName: 'พ.ย. 2569', year: 2026, monthIndex: 10, days: 30 }
 ];
 
 const allFuelPrices = {};
@@ -172,6 +173,58 @@ monthDefs.forEach(m => {
           perTank
         });
       }
+    } else if (mKey === '11') {
+      // Month 11 (November 2026 - 30 days)
+      const dayCompMap = {};
+      for (let r = 2; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || !row[1] || row[1].includes('ผลรวม') || row[0].includes('ผลรวม')) continue;
+        const day = parseInt(row[1].split('/')[0]);
+        if (day) {
+          dayCompMap[day] = {
+            dayName: row[0],
+            dateStr: row[1],
+            km: cleanNum(row[2]),
+            litres: cleanNum(row[3]),
+            price: cleanNum(row[4]),
+            compRate: cleanNum(row[5]),
+            comp: cleanNum(row[6]),
+            tanks: cleanNum(row[7]),
+            perTank: cleanNum(row[8])
+          };
+        }
+      }
+
+      const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+      for (let d = 1; d <= 30; d++) {
+        const date = new Date(2026, 10, d);
+        const dayName = thaiDays[date.getDay()];
+        const dateStr = `${String(d).padStart(2, '0')}/11/2569`;
+        const entry = dayCompMap[d];
+
+        const price = entry && entry.price > 0 ? entry.price : (d <= 4 ? 42.54 : 0);
+        const compRate = price > 30 ? parseFloat((price - 30).toFixed(2)) : 0;
+        const km = entry ? entry.km : 0;
+        const litres = entry ? entry.litres : 0;
+        const comp = entry ? entry.comp : 0;
+        const tanks = entry ? entry.tanks : 0;
+        const perTank = entry ? entry.perTank : 0;
+
+        if (price > 0) allFuelPrices[mKey][d] = price;
+        allDailyOfficial[mKey].push({
+          day: d,
+          dayName,
+          dateStr,
+          km,
+          litres,
+          price,
+          compRate,
+          comp,
+          tanks,
+          perTank,
+          isSunday: dayName === 'อาทิตย์'
+        });
+      }
     } else {
       // Months 04 to 10
       for (let r = 2; r < rows.length; r++) {
@@ -212,6 +265,39 @@ monthDefs.forEach(m => {
   allDriverSummaries[mKey] = [];
   allMonthRecords[mKey] = {};
 
+  // For Month 11: also parse doc2_detail_11.csv for exact individual compensation & tanks
+  const detailFile = `doc2_detail_${mKey}.csv`;
+  const driverDetailMap = {};
+  if (fs.existsSync(detailFile) && mKey === '11') {
+    const detailRows = parseCsv(fs.readFileSync(detailFile, 'utf8'));
+    for (let r = 1; r < detailRows.length; r++) {
+      const dRow = detailRows[r];
+      if (!dRow || !dRow[0] || isNaN(parseInt(dRow[0]))) continue;
+      const empId = dRow[0].trim();
+      const km = cleanNum(dRow[5]);
+      const comp = cleanNum(dRow[7]);
+      const litres = cleanNum(dRow[10]);
+      const tanks = cleanNum(dRow[12]);
+      if (!driverDetailMap[empId]) {
+        driverDetailMap[empId] = {
+          workingDays: 0,
+          totalKm: 0,
+          totalLitres: 0,
+          totalCompensation: 0,
+          deliveryUnits: 0,
+          branchName: dRow[14]?.trim() || ''
+        };
+      }
+      if (km > 0) {
+        driverDetailMap[empId].workingDays += 1;
+        driverDetailMap[empId].totalKm += km;
+        driverDetailMap[empId].totalLitres += litres;
+        driverDetailMap[empId].totalCompensation += comp;
+        driverDetailMap[empId].deliveryUnits += tanks;
+      }
+    }
+  }
+
   if (fs.existsSync(diffFile)) {
     const rows = parseCsv(fs.readFileSync(diffFile, 'utf8'));
     const days = m.days;
@@ -242,14 +328,24 @@ monthDefs.forEach(m => {
 
       // Extract summary stats from row
       // Cols: 41=totalKm, 42=workingDays, 43=avgKm, 44=vehicleType, 45=fuelConsumption, 46=litres, 47=comp, 66=role, 67=branchName, 69=tanks
-      const totalKm = cleanNum(row[41]);
-      const workingDays = cleanNum(row[42]);
+      const diffTotalKm = cleanNum(row[41]);
+      const diffWorkingDays = cleanNum(row[42]);
       const vehicleType = row[44] ? row[44].trim() : 'กระบะ 4 ล้อ';
       const fuelConsumption = cleanNum(row[45]) || 11.0;
-      const totalLitres = cleanNum(row[46]);
-      const totalCompensation = cleanNum(row[47]);
-      const branchName = row[67] ? row[67].trim() : '';
-      const deliveryUnits = cleanNum(row[7]) || cleanNum(row[69]) || 0;
+      const diffTotalLitres = cleanNum(row[46]);
+      const diffTotalComp = cleanNum(row[47]);
+      const diffBranchName = row[67] ? row[67].trim() : '';
+      const diffDeliveryUnits = cleanNum(row[7]) || cleanNum(row[69]) || 0;
+
+      const detailInfo = driverDetailMap[empId];
+      const totalKm = (detailInfo && detailInfo.totalKm > 0) ? parseFloat(detailInfo.totalKm.toFixed(2)) : diffTotalKm;
+      const workingDays = (detailInfo && detailInfo.workingDays > 0) ? detailInfo.workingDays : diffWorkingDays;
+      const totalLitres = (detailInfo && detailInfo.totalLitres > 0) ? parseFloat(detailInfo.totalLitres.toFixed(2)) : diffTotalLitres;
+      const totalCompensation = (detailInfo && detailInfo.totalCompensation > 0) 
+        ? parseFloat(detailInfo.totalCompensation.toFixed(2)) 
+        : (mKey === '11' ? 0 : diffTotalComp);
+      const branchName = (detailInfo && detailInfo.branchName) || diffBranchName;
+      const deliveryUnits = (detailInfo && detailInfo.deliveryUnits > 0) ? detailInfo.deliveryUnits : diffDeliveryUnits;
       const compPerTank = deliveryUnits > 0 ? totalCompensation / deliveryUnits : 0;
 
       // Match branch ID from vehicleNo (first 2 digits)

@@ -1180,7 +1180,7 @@ export default function MonthlyExecutiveDashboard({
             <tfoot className="bg-slate-100 font-extrabold text-slate-900 sticky bottom-0 border-t-2 border-slate-300">
               <tr>
                 <td colSpan={3} className="py-4 px-4 text-center">
-                  รวมทั้งสิ้น 18 สาขา ({matrixPeriod === 'all' ? 'สะสม 10 เดือน' : monthList.find(m => m.key === matrixPeriod)?.name})
+                  รวมทั้งสิ้น 18 สาขา ({matrixPeriod === 'all' ? `สะสม ${monthList.length} เดือน` : monthList.find(m => m.key === matrixPeriod)?.name})
                 </td>
                 <td className="py-4 px-4 text-center tabular-nums text-sm">
                   {branchMatrixData.totalVehicles} คัน

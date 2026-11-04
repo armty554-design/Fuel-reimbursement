@@ -47,8 +47,8 @@ export default function App() {
     }
   });
 
-  // Selected Month Key: default to '10' (ตุลาคม 2569) or current active
-  const [selectedMonthKey, setSelectedMonthKey] = useState('10');
+  // Selected Month Key: default to '11' (พฤศจิกายน 2569) or current active
+  const [selectedMonthKey, setSelectedMonthKey] = useState('11');
   
   // Dynamic fuel prices dictionary per month
   const [allFuelPrices, setAllFuelPrices] = useState(() => seedData.allFuelPrices || {});
@@ -126,7 +126,7 @@ export default function App() {
                 </div>
                 <div className="text-xs text-slate-500 font-medium flex items-center gap-2">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>10 เดือน (ม.ค. – ต.ค. 2569) • 18 สาขา</span>
+                  <span>11 เดือน (ม.ค. – พ.ย. 2569) • 18 สาขา</span>
                 </div>
               </div>
             </div>

@@ -27,7 +27,7 @@ import MultiSelectDropdown from './MultiSelectDropdown';
 export default function SummaryDashboard({
   branches = [],
   drivers = [],
-  selectedMonthKey = '10',
+  selectedMonthKey = '11',
   setSelectedMonthKey,
   monthList = [],
   allMonthRecords = {},
@@ -45,7 +45,7 @@ export default function SummaryDashboard({
   // Current month definition
   const currentMonth = monthList.find(m => m.key === selectedMonthKey) || 
     monthList[monthList.length - 1] || 
-    { key: '10', name: 'ตุลาคม 2569', shortName: 'ต.ค. 2569', days: 31, year: 2026, monthIndex: 9 };
+    { key: '11', name: 'พฤศจิกายน 2569', shortName: 'พ.ย. 2569', days: 30, year: 2026, monthIndex: 10 };
   
   const daysInMonth = currentMonth.days;
   const monthName = currentMonth.name;

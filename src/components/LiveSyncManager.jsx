@@ -51,8 +51,8 @@ export default function LiveSyncManager({
     if (!isSilent) setSyncStatus('syncing');
 
     try {
-      // Sync primary months (active month + 10 + 01)
-      const monthsToSync = Array.from(new Set([selectedMonthKey, '10', '01'].filter(k => SHEET_CONFIG[k])));
+      // Sync primary months (active month + 11 + 10 + 01)
+      const monthsToSync = Array.from(new Set([selectedMonthKey, '11', '10', '01'].filter(k => SHEET_CONFIG[k])));
       let hasChanges = false;
       let changedMonths = [];
 

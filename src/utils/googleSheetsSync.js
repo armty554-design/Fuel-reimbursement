@@ -27,6 +27,13 @@ export const SHEET_CONFIG = {
     diffGid: '1173352041',   // เลขไมล์ Diff 10
     tanksGid: '375387489',   // ยอดส่ง 10
     detailGid: '29931557'    // รายละเอียดชดเชยน้ำมัน ต.ค.
+  },
+  '11': {
+    name: 'พฤศจิกายน 2569',
+    compGid: '965952839',    // ค่าชดเชย 11
+    diffGid: '822357899',    // เลขไมล์ Diff 11
+    tanksGid: '1330045554',  // ยอดส่ง 11
+    detailGid: '861334704'   // รายละเอียดชดเชยน้ำมัน พ.ย.
   }
 };
 
@@ -180,9 +187,40 @@ export async function fetchLiveDailyComp(monthKey, basePrice = 30.0) {
     };
   }
 
+  // Ensure all days of the month exist so daily view calendar has complete sequence
+  const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+  const monthNum = parseInt(monthKey, 10);
+  const daysInMonth = (monthKey === '02') ? 28 : (['04', '06', '09', '11'].includes(monthKey) ? 30 : 31);
+  const dailyMap = {};
+  daily.forEach(d => { dailyMap[d.day] = d; });
+  const completeDaily = [];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (dailyMap[d]) {
+      completeDaily.push(dailyMap[d]);
+    } else {
+      const date = new Date(2026, monthNum - 1, d);
+      const dayName = thaiDays[date.getDay()];
+      const dateStr = `${String(d).padStart(2, '0')}/${monthKey}/2569`;
+      completeDaily.push({
+        day: d,
+        dayName,
+        dateStr,
+        km: 0,
+        litres: 0,
+        price: 0,
+        compRate: 0,
+        comp: 0,
+        tanks: 0,
+        perTank: 0,
+        isSunday: dayName === 'อาทิตย์'
+      });
+    }
+  }
+
   return {
     monthKey,
-    daily,
+    daily: completeDaily,
     prices,
     summary,
     timestamp: Date.now()
@@ -212,6 +250,53 @@ export async function fetchLiveDriverDiff(monthKey) {
   const csvText = await res.text();
   const rows = parseCsv(csvText);
 
+  // If detailGid is provided (e.g. Month 11), fetch detail sheet to get exact driver compensation & tanks
+  const driverDetailMap = {};
+  if (cfg.detailGid) {
+    try {
+      const detailUrl = getExportUrl(cfg.detailGid);
+      const detailRes = await fetch(detailUrl, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (detailRes.ok) {
+        const detailText = await detailRes.text();
+        const dRows = parseCsv(detailText);
+        for (let r = 1; r < dRows.length; r++) {
+          const dRow = dRows[r];
+          if (!dRow || !dRow[0] || isNaN(parseInt(dRow[0], 10))) continue;
+          const eId = dRow[0].trim();
+          const km = cleanNum(dRow[5]);
+          const comp = cleanNum(dRow[7]);
+          const litres = cleanNum(dRow[10]);
+          const tanks = cleanNum(dRow[12]);
+          if (!driverDetailMap[eId]) {
+            driverDetailMap[eId] = {
+              workingDays: 0,
+              totalKm: 0,
+              totalLitres: 0,
+              totalCompensation: 0,
+              deliveryUnits: 0,
+              branchName: dRow[14]?.trim() || ''
+            };
+          }
+          if (km > 0) {
+            driverDetailMap[eId].workingDays += 1;
+            driverDetailMap[eId].totalKm += km;
+            driverDetailMap[eId].totalLitres += litres;
+            driverDetailMap[eId].totalCompensation += comp;
+            driverDetailMap[eId].deliveryUnits += tanks;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Live detail fetch error:', e);
+    }
+  }
+
   const drivers = [];
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
@@ -223,14 +308,24 @@ export async function fetchLiveDriverDiff(monthKey) {
     const diffType = row[9] ? row[9].trim() : '';
     if (diffType !== 'DIFF. + 10%') continue;
 
-    const totalKm = cleanNum(row[41]);
-    const workingDays = cleanNum(row[42]);
+    const diffTotalKm = cleanNum(row[41]);
+    const diffWorkingDays = cleanNum(row[42]);
     const vehicleType = row[44] ? row[44].trim() : 'กระบะ 4 ล้อ';
     const fuelConsumption = cleanNum(row[45]) || 11.0;
-    const totalLitres = cleanNum(row[46]);
-    const totalCompensation = cleanNum(row[47]);
-    const branchName = row[67] ? row[67].trim() : '';
-    const deliveryUnits = cleanNum(row[7]) || cleanNum(row[69]) || 0;
+    const diffTotalLitres = cleanNum(row[46]);
+    const diffTotalComp = cleanNum(row[47]);
+    const diffBranchName = row[67] ? row[67].trim() : '';
+    const diffDeliveryUnits = cleanNum(row[7]) || cleanNum(row[69]) || 0;
+
+    const detail = driverDetailMap[empId];
+    const totalKm = (detail && detail.totalKm > 0) ? parseFloat(detail.totalKm.toFixed(2)) : diffTotalKm;
+    const workingDays = (detail && detail.workingDays > 0) ? detail.workingDays : diffWorkingDays;
+    const totalLitres = (detail && detail.totalLitres > 0) ? parseFloat(detail.totalLitres.toFixed(2)) : diffTotalLitres;
+    const totalCompensation = (detail && detail.totalCompensation > 0) 
+      ? parseFloat(detail.totalCompensation.toFixed(2)) 
+      : (monthKey === '11' ? 0 : diffTotalComp);
+    const branchName = (detail && detail.branchName) || diffBranchName;
+    const deliveryUnits = (detail && detail.deliveryUnits > 0) ? detail.deliveryUnits : diffDeliveryUnits;
     const compPerTank = deliveryUnits > 0 ? totalCompensation / deliveryUnits : 0;
     const branchId = vehicleNo.length >= 2 ? vehicleNo.substring(0, 2) : '10';
 
