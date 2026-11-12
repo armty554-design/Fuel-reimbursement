@@ -14,7 +14,8 @@ import {
   Layers,
   ChevronRight,
   Eye,
-  Filter
+  Filter,
+  RotateCcw
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import truckImg from '../assets/sprinkle-truck.png';
@@ -53,20 +54,114 @@ export default function SprinkleExecutiveOverview({
   }, [monthList]);
 
   const [activeDailyMonthKey, setActiveDailyMonthKey] = useState('11');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const effectiveStart = startDate && endDate && startDate > endDate ? endDate : startDate;
+  const effectiveEnd = startDate && endDate && startDate > endDate ? startDate : endDate;
+  const hasDateFilter = Boolean(effectiveStart || effectiveEnd);
+
+  const toIsoDate = (mKey, day) => `2026-${mKey}-${String(day).padStart(2, '0')}`;
+  const formatIsoToThai = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${Number(y) + 543}`;
+  };
+  const isDateInRange = (isoDate) => {
+    if (effectiveStart && isoDate < effectiveStart) return false;
+    if (effectiveEnd && isoDate > effectiveEnd) return false;
+    return true;
+  };
+
   const currentDailyMonth = availableMonths.find(m => m.key === activeDailyMonthKey) || availableMonths[availableMonths.length - 2] || availableMonths[0];
 
   const isFiltered = selectedBranches.length > 0 || selectedVehicles.length > 0;
+
+  // Shared helper to filter drivers by active branch/vehicle selection and compute scaling ratio
+  const getFilteredFleet = (drivers) => {
+    const filteredDrivers = drivers.filter(d => {
+      const matchB = selectedBranches.length === 0 || selectedBranches.includes(d.branch);
+      const matchV = selectedVehicles.length === 0 || selectedVehicles.includes(d.vehicleNo);
+      return matchB && matchV;
+    });
+    const fleetRatio = Math.max(0.001, filteredDrivers.length / (drivers.length || 342));
+    return { filteredDrivers, fleetRatio };
+  };
+
+  // Shared helper to map a daily official entry, optionally scaled by fleetRatio
+  const buildDailyRow = (d, mKey, applyScale, fleetRatio = 1) => {
+    const isSun = d.dayName === 'อาทิตย์';
+    const km = applyScale ? (isSun ? 0 : parseFloat(((d.km || 0) * fleetRatio).toFixed(2))) : (d.km || 0);
+    const litres = applyScale ? (isSun ? 0 : parseFloat(((d.litres || 0) * fleetRatio).toFixed(2))) : (d.litres || 0);
+    const price = d.price || 0;
+    const compRate = applyScale
+      ? Math.max(0, price - basePrice)
+      : (d.compRate !== undefined ? d.compRate : Math.max(0, price - basePrice));
+    const comp = applyScale ? (isSun ? 0 : parseFloat(((d.comp || 0) * fleetRatio).toFixed(2))) : (d.comp || 0);
+    const tanks = applyScale ? (isSun ? 0 : Math.round((d.tanks || 0) * fleetRatio)) : (d.tanks || 0);
+    const perTank = tanks > 0 ? comp / tanks : 0;
+
+    return {
+      monthKey: mKey,
+      day: d.day,
+      dayName: d.dayName,
+      dateStr: `${String(d.day).padStart(2, '0')}/${mKey}/2026`,
+      km,
+      litres,
+      price,
+      compRate,
+      comp,
+      tanks,
+      perTank,
+      isSunday: isSun
+    };
+  };
 
   // -------------------------------------------------------------
   // 1. DATA COMPUTATION FOR "แบบรายวัน" (Daily View)
   // -------------------------------------------------------------
   const dailyData = useMemo(() => {
+    // When Date Range filter is active, aggregate matching days across all months
+    if (hasDateFilter) {
+      const rows = [];
+
+      availableMonths.forEach(m => {
+        const mKey = m.key;
+        const rawDaily = allDailyOfficial[mKey] || [];
+        const drivers = allDriverSummaries[mKey] || [];
+        const fleetRatio = isFiltered ? getFilteredFleet(drivers).fleetRatio : 1;
+
+        rawDaily.forEach(d => {
+          if (!isDateInRange(toIsoDate(mKey, d.day))) return;
+          rows.push(buildDailyRow(d, mKey, isFiltered, fleetRatio));
+        });
+      });
+
+      const totalKm = rows.reduce((s, r) => s + r.km, 0);
+      const totalLitres = rows.reduce((s, r) => s + r.litres, 0);
+      const totalComp = rows.reduce((s, r) => s + r.comp, 0);
+      const totalTanks = rows.reduce((s, r) => s + r.tanks, 0);
+      const activeDays = rows.filter(r => r.km > 0 && r.price > 0);
+      const avgPrice = activeDays.length ? (activeDays.reduce((a, b) => a + b.price, 0) / activeDays.length) : 0;
+      const avgCompRate = avgPrice > 0 ? Math.max(0, avgPrice - basePrice) : 0;
+      const costPerTank = totalTanks > 0 ? (totalComp / totalTanks) : 0;
+
+      return {
+        rows,
+        totals: {
+          totalKm,
+          totalLitres,
+          avgPrice,
+          totalComp,
+          avgCompRate,
+          totalTanks,
+          costPerTank
+        }
+      };
+    }
+
     const rawDaily = allDailyOfficial[activeDailyMonthKey] || [];
     const drivers = allDriverSummaries[activeDailyMonthKey] || [];
-
-    const formatDate = (day, mKey) => {
-      return `${String(day).padStart(2, '0')}/${mKey}/2026`;
-    };
 
     if (!isFiltered) {
       let sumKm = 0;
@@ -75,32 +170,12 @@ export default function SprinkleExecutiveOverview({
       let sumTanks = 0;
 
       const rows = rawDaily.map(d => {
-        const km = d.km || 0;
-        const litres = d.litres || 0;
-        const price = d.price || 0;
-        const compRate = d.compRate !== undefined ? d.compRate : Math.max(0, price - basePrice);
-        const comp = d.comp || 0;
-        const tanks = d.tanks || 0;
-        const perTank = tanks > 0 ? comp / tanks : 0;
-
-        sumKm += km;
-        sumLitres += litres;
-        sumComp += comp;
-        sumTanks += tanks;
-
-        return {
-          day: d.day,
-          dayName: d.dayName,
-          dateStr: formatDate(d.day, activeDailyMonthKey),
-          km,
-          litres,
-          price,
-          compRate,
-          comp,
-          tanks,
-          perTank,
-          isSunday: d.dayName === 'อาทิตย์'
-        };
+        const mapped = buildDailyRow(d, activeDailyMonthKey, false, 1);
+        sumKm += mapped.km;
+        sumLitres += mapped.litres;
+        sumComp += mapped.comp;
+        sumTanks += mapped.tanks;
+        return mapped;
       });
 
       // Special official totals matching company presentation slide exactly
@@ -213,42 +288,13 @@ export default function SprinkleExecutiveOverview({
     }
 
     // Dynamic when filtered by branch or vehicle
-    const filteredDrivers = drivers.filter(d => {
-      const matchB = selectedBranches.length === 0 || selectedBranches.includes(d.branch);
-      const matchV = selectedVehicles.length === 0 || selectedVehicles.includes(d.vehicleNo);
-      return matchB && matchV;
-    });
-
-    const fleetRatio = Math.max(0.001, filteredDrivers.length / (drivers.length || 342));
+    const { filteredDrivers, fleetRatio } = getFilteredFleet(drivers);
     const branchKm = filteredDrivers.reduce((a, d) => a + (d.totalKm || 0), 0);
     const branchComp = filteredDrivers.reduce((a, d) => a + (d.totalCompensation || 0), 0);
     const branchTanks = filteredDrivers.reduce((a, d) => a + (d.deliveryUnits || 0), 0);
     const branchLitres = filteredDrivers.reduce((a, d) => a + (d.totalLitres || (d.totalKm / 11.0)), 0);
 
-    const rows = rawDaily.map(d => {
-      const isSun = d.dayName === 'อาทิตย์';
-      const km = isSun ? 0 : parseFloat((d.km * fleetRatio).toFixed(2));
-      const litres = isSun ? 0 : parseFloat((d.litres * fleetRatio).toFixed(2));
-      const price = d.price || 0;
-      const compRate = Math.max(0, price - basePrice);
-      const comp = isSun ? 0 : parseFloat((d.comp * fleetRatio).toFixed(2));
-      const tanks = isSun ? 0 : Math.round(d.tanks * fleetRatio);
-      const perTank = tanks > 0 ? comp / tanks : 0;
-
-      return {
-        day: d.day,
-        dayName: d.dayName,
-        dateStr: formatDate(d.day, activeDailyMonthKey),
-        km,
-        litres,
-        price,
-        compRate,
-        comp,
-        tanks,
-        perTank,
-        isSunday: isSun
-      };
-    });
+    const rows = rawDaily.map(d => buildDailyRow(d, activeDailyMonthKey, true, fleetRatio));
 
     const activeDays = rows.filter(r => r.km > 0);
     const avgPrice = activeDays.length ? (activeDays.reduce((a, b) => a + b.price, 0) / activeDays.length) : 0;
@@ -267,14 +313,14 @@ export default function SprinkleExecutiveOverview({
         costPerTank
       }
     };
-  }, [activeDailyMonthKey, allDailyOfficial, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice]);
+  }, [activeDailyMonthKey, allDailyOfficial, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice, availableMonths, hasDateFilter, effectiveStart, effectiveEnd]);
 
   // -------------------------------------------------------------
   // 2. DATA COMPUTATION FOR "แบบรายเดือน" (Monthly Aggregated View)
   // -------------------------------------------------------------
   const monthlyData = useMemo(() => {
-    // Official baseline for all 10 months (ม.ค. – ต.ค. 2569)
-    // Month 01 and Month 10 dynamically aggregate latest synced days from allDailyOfficial (Google Sheets)
+    // Official baseline for all 11 months (ม.ค. – พ.ย. 2569)
+    // Month 01, 10, 11 dynamically aggregate latest synced days from allDailyOfficial (Google Sheets)
     const d01 = allDailyOfficial['01'] || [];
     const d01Km = d01.reduce((s, r) => s + (r.km || 0), 0) || 530888.33;
     const d01Litres = d01.reduce((s, r) => s + (r.litres || 0), 0) || 61066.72;
@@ -343,34 +389,67 @@ export default function SprinkleExecutiveOverview({
     let sumTanks = 0;
     let weightedPriceSum = 0;
 
-    const rows = availableMonths.map((m, idx) => {
+    const rows = availableMonths.map((m) => {
       const mKey = m.key;
+      const monthStartIso = toIsoDate(mKey, 1);
+      const monthEndIso = toIsoDate(mKey, m.days);
+
+      // Skip months completely outside selected date range
+      if (hasDateFilter) {
+        if (effectiveStart && monthEndIso < effectiveStart) return null;
+        if (effectiveEnd && monthStartIso > effectiveEnd) return null;
+      }
+
       const drivers = allDriverSummaries[mKey] || [];
       const base = officialBaseline[mKey] || { km: 0, litres: 0, price: 0, compRate: 0, comp: 0, tanks: 0, perTank: 0 };
+      const isFullMonthInRange = !hasDateFilter || (
+        (!effectiveStart || effectiveStart <= monthStartIso) &&
+        (!effectiveEnd || effectiveEnd >= monthEndIso)
+      );
 
-      let km, litres, price, compRate, comp, tanks, perTank;
+      let km, litres, price, compRate, comp, tanks, perTank, dateRangeStr;
 
-      if (!isFiltered) {
-        km = base.km;
-        litres = base.litres;
-        price = base.price;
-        compRate = base.compRate;
-        comp = base.comp;
-        tanks = base.tanks;
-        perTank = base.perTank;
+      if (isFullMonthInRange) {
+        dateRangeStr = `01/${mKey}/2569 – ${m.days}/${mKey}/2569`;
+
+        if (!isFiltered) {
+          km = base.km;
+          litres = base.litres;
+          price = base.price;
+          compRate = base.compRate;
+          comp = base.comp;
+          tanks = base.tanks;
+          perTank = base.perTank;
+        } else {
+          const { filteredDrivers } = getFilteredFleet(drivers);
+
+          km = filteredDrivers.reduce((a, d) => a + (d.totalKm || 0), 0);
+          litres = filteredDrivers.reduce((a, d) => a + (d.totalLitres || (d.totalKm / 11.0)), 0);
+          comp = filteredDrivers.reduce((a, d) => a + (d.totalCompensation || 0), 0);
+          tanks = filteredDrivers.reduce((a, d) => a + (d.deliveryUnits || 0), 0);
+          price = base.price;
+          compRate = Math.max(0, price - basePrice);
+          perTank = tanks > 0 ? comp / tanks : 0;
+        }
       } else {
-        const filteredDrivers = drivers.filter(d => {
-          const matchB = selectedBranches.length === 0 || selectedBranches.includes(d.branch);
-          const matchV = selectedVehicles.length === 0 || selectedVehicles.includes(d.vehicleNo);
-          return matchB && matchV;
-        });
+        // Partial month range: aggregate from daily official records within [effectiveStart, effectiveEnd]
+        const clampedStart = effectiveStart && effectiveStart > monthStartIso ? effectiveStart : monthStartIso;
+        const clampedEnd = effectiveEnd && effectiveEnd < monthEndIso ? effectiveEnd : monthEndIso;
+        dateRangeStr = `${formatIsoToThai(clampedStart)} – ${formatIsoToThai(clampedEnd)}`;
 
-        km = filteredDrivers.reduce((a, d) => a + (d.totalKm || 0), 0);
-        litres = filteredDrivers.reduce((a, d) => a + (d.totalLitres || (d.totalKm / 11.0)), 0);
-        comp = filteredDrivers.reduce((a, d) => a + (d.totalCompensation || 0), 0);
-        tanks = filteredDrivers.reduce((a, d) => a + (d.deliveryUnits || 0), 0);
-        price = base.price;
-        compRate = Math.max(0, price - basePrice);
+        const rawDaily = allDailyOfficial[mKey] || [];
+        const fleetRatio = isFiltered ? getFilteredFleet(drivers).fleetRatio : 1;
+        const matchedRows = rawDaily
+          .filter(d => isDateInRange(toIsoDate(mKey, d.day)))
+          .map(d => buildDailyRow(d, mKey, isFiltered, fleetRatio));
+
+        km = matchedRows.reduce((s, r) => s + r.km, 0);
+        litres = matchedRows.reduce((s, r) => s + r.litres, 0);
+        comp = matchedRows.reduce((s, r) => s + r.comp, 0);
+        tanks = matchedRows.reduce((s, r) => s + r.tanks, 0);
+        const activeDays = matchedRows.filter(r => r.km > 0 && r.price > 0);
+        price = activeDays.length ? (activeDays.reduce((a, b) => a + b.price, 0) / activeDays.length) : 0;
+        compRate = price > 0 ? Math.max(0, price - basePrice) : 0;
         perTank = tanks > 0 ? comp / tanks : 0;
       }
 
@@ -386,9 +465,8 @@ export default function SprinkleExecutiveOverview({
 
       return {
         key: mKey,
-        index: idx + 1,
         monthName: m.name,
-        dateRangeStr: `01/${mKey}/2569 – ${m.days}/${mKey}/2569`,
+        dateRangeStr,
         km,
         litres,
         price,
@@ -398,10 +476,13 @@ export default function SprinkleExecutiveOverview({
         perTank,
         isEmpty
       };
-    });
+    }).filter(Boolean).map((row, idx) => ({
+      ...row,
+      index: idx + 1
+    }));
 
-    const avgPrice = sumKm > 0 ? (weightedPriceSum / sumKm) : 39.07;
-    const avgCompRate = Math.max(0, avgPrice - basePrice);
+    const avgPrice = sumKm > 0 ? (weightedPriceSum / sumKm) : 0;
+    const avgCompRate = avgPrice > 0 ? Math.max(0, avgPrice - basePrice) : 0;
     const costPerTank = sumTanks > 0 ? (sumComp / sumTanks) : 0;
 
     return {
@@ -416,7 +497,7 @@ export default function SprinkleExecutiveOverview({
         costPerTank
       }
     };
-  }, [availableMonths, allDailyOfficial, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice]);
+  }, [availableMonths, allDailyOfficial, allDriverSummaries, isFiltered, selectedBranches, selectedVehicles, basePrice, hasDateFilter, effectiveStart, effectiveEnd]);
 
   // Current active data based on viewType
   const currentViewData = viewType === 'monthly' ? monthlyData : dailyData;
@@ -425,6 +506,9 @@ export default function SprinkleExecutiveOverview({
   // Export to Excel (.xlsx)
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
+    const rangeLabel = hasDateFilter
+      ? `${effectiveStart ? formatIsoToThai(effectiveStart) : '01/01/2569'} – ${effectiveEnd ? formatIsoToThai(effectiveEnd) : '31/12/2569'}`
+      : null;
 
     if (viewType === 'monthly') {
       const excelData = monthlyData.rows.map(r => ({
@@ -442,8 +526,8 @@ export default function SprinkleExecutiveOverview({
 
       excelData.push({
         'ลำดับ': '',
-        'วันที่ส่ง (เดือน)': 'ผลรวมทั้งปี',
-        'ช่วงเวลา': `รวม ${monthlyData.rows.length} เดือน`,
+        'วันที่ส่ง (เดือน)': 'ผลรวม',
+        'ช่วงเวลา': rangeLabel ? `ช่วง ${rangeLabel} (${monthlyData.rows.length} เดือน)` : `รวม ${monthlyData.rows.length} เดือน`,
         'เลขไมล์ (กม.)': currentTotals.totalKm,
         'ปริมาณน้ำมันที่ใช้จริง (ลิตร)': currentTotals.totalLitres,
         'ราคาน้ำมัน (บาท/ลิตร)': currentTotals.avgPrice,
@@ -454,7 +538,7 @@ export default function SprinkleExecutiveOverview({
       });
 
       const ws = XLSX.utils.json_to_sheet(excelData);
-      XLSX.utils.book_append_sheet(wb, ws, 'สรุปค่าชดเชยรายเดือน_8เดือน');
+      XLSX.utils.book_append_sheet(wb, ws, 'สรุปค่าชดเชยรายเดือน');
       XLSX.writeFile(wb, `สรุปค่าชดเชยน้ำมัน_ภาพรวมรายเดือน_สปริงเคิล.xlsx`);
     } else {
       const excelData = dailyData.rows.map(r => ({
@@ -471,7 +555,7 @@ export default function SprinkleExecutiveOverview({
 
       excelData.push({
         'วัน': 'ผลรวม',
-        'วันที่ส่ง': `ทั้งเดือน ${currentDailyMonth.name}`,
+        'วันที่ส่ง': rangeLabel ? `ช่วง ${rangeLabel}` : `ทั้งเดือน ${currentDailyMonth.name}`,
         'เลขไมล์ (กม.)': currentTotals.totalKm,
         'ปริมาณน้ำมันที่ใช้จริง (ลิตร)': currentTotals.totalLitres,
         'ราคาน้ำมัน (บาท/ลิตร)': currentTotals.avgPrice,
@@ -482,84 +566,158 @@ export default function SprinkleExecutiveOverview({
       });
 
       const ws = XLSX.utils.json_to_sheet(excelData);
-      XLSX.utils.book_append_sheet(wb, ws, `สรุปรายวัน_${activeDailyMonthKey}`);
-      XLSX.writeFile(wb, `สรุปค่าชดเชยน้ำมัน_${currentDailyMonth.name}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, hasDateFilter ? 'สรุปรายวัน_ตามช่วงวันที่' : `สรุปรายวัน_${activeDailyMonthKey}`);
+      XLSX.writeFile(wb, hasDateFilter ? `สรุปค่าชดเชยน้ำมัน_ช่วงวันที่.xlsx` : `สรุปค่าชดเชยน้ำมัน_${currentDailyMonth.name}.xlsx`);
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* 🌟 Interactive Toolbar on Top (View Mode Switcher + Month Selector + Action Buttons) */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden">
+      {/* 🌟 Interactive Toolbar on Top (View Mode Switcher + Month Selector + Date Range Filter + Action Buttons) */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col gap-3 print:hidden">
         
-        {/* Left: View Mode Toggle (แบบรายเดือน vs แบบรายวัน) */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
-            <button
-              onClick={() => setViewType('monthly')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
-                viewType === 'monthly'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Calendar className="w-4 h-4" />
-              <span>แบบรายเดือน (รวมทุกเดือน)</span>
-            </button>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Left: View Mode Toggle (แบบรายเดือน vs แบบรายวัน) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+              <button
+                onClick={() => setViewType('monthly')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                  viewType === 'monthly'
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Calendar className="w-4 h-4" />
+                <span>แบบรายเดือน (รวมทุกเดือน)</span>
+              </button>
 
-            <button
-              onClick={() => setViewType('daily')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
-                viewType === 'daily'
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>แบบรายวัน (เจาะจงรายเดือน)</span>
-            </button>
+              <button
+                onClick={() => setViewType('daily')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
+                  viewType === 'daily'
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>แบบรายวัน (เจาะจงรายเดือน)</span>
+              </button>
+            </div>
+
+            {/* If in Daily mode: Show Month Selector Pills */}
+            {viewType === 'daily' && (
+              <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
+                {availableMonths.map(m => {
+                  const isActive = !hasDateFilter && m.key === activeDailyMonthKey;
+                  const monthStartIso = toIsoDate(m.key, 1);
+                  const monthEndIso = toIsoDate(m.key, m.days);
+                  const isInDateFilter = hasDateFilter && (!effectiveStart || monthEndIso >= effectiveStart) && (!effectiveEnd || monthStartIso <= effectiveEnd);
+                  return (
+                    <button
+                      key={m.key}
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                        setActiveDailyMonthKey(m.key);
+                      }}
+                      className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : isInDateFilter
+                            ? 'bg-sky-100 text-[#074b83] border border-sky-300'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <span>{m.shortName || m.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* If in Daily mode: Show Month Selector Pills */}
-          {viewType === 'daily' && (
-            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 ml-0 sm:ml-2">
-              {availableMonths.map(m => {
-                const isActive = m.key === activeDailyMonthKey;
-                return (
-                  <button
-                    key={m.key}
-                    onClick={() => setActiveDailyMonthKey(m.key)}
-                    className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <span>{m.shortName || m.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleExportExcel}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>ดาวน์โหลด Excel (.xlsx)</span>
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">พิมพ์ / PDF</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportExcel}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition shadow-xs cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>ดาวน์โหลด Excel (.xlsx)</span>
-          </button>
+        {/* 📅 Date Range Filter Strip (เลือกระหว่างวันที่) */}
+        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#074b83] bg-sky-50 px-2.5 py-1.5 rounded-xl border border-sky-200/80">
+              <Filter className="w-3.5 h-3.5 text-sky-600" />
+              <span>เลือกระหว่างวันที่</span>
+            </div>
 
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">พิมพ์ / PDF</span>
-          </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                <span>ตั้งแต่</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  min="2026-01-01"
+                  max="2026-12-31"
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer transition"
+                  aria-label="วันที่เริ่มต้น"
+                />
+              </label>
+
+              <span className="text-slate-400 text-xs font-bold">–</span>
+
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                <span>ถึง</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  min="2026-01-01"
+                  max="2026-12-31"
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer transition"
+                  aria-label="วันที่สิ้นสุด"
+                />
+              </label>
+
+              {hasDateFilter && (
+                <button
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                  title="ล้างตัวกรองช่วงวันที่"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>ล้างวันที่</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {hasDateFilter && (
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-900 bg-sky-50/90 border border-sky-200 px-3 py-1 rounded-xl self-start sm:self-auto">
+              <Calendar className="w-3.5 h-3.5 text-sky-600" />
+              <span>
+                กำลังแสดง: {effectiveStart ? formatIsoToThai(effectiveStart) : '01/01/2569'} – {effectiveEnd ? formatIsoToThai(effectiveEnd) : '31/12/2569'}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -592,9 +750,11 @@ export default function SprinkleExecutiveOverview({
             <div className="mt-1.5 inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-white/90 border border-sky-300 text-sky-900 text-xs sm:text-sm font-bold shadow-2xs">
               <Sparkles className="w-3.5 h-3.5 text-sky-600" />
               <span>
-                {viewType === 'monthly'
-                  ? `ข้อมูลสะสมภาพรวมรายเดือน ประจำปี 2569 (รวม ${monthlyData.rows.length} เดือน)`
-                  : `ข้อมูลสะสม ณ วันที่ 1 - ${currentDailyMonth.days} ${currentDailyMonth.name}`}
+                {hasDateFilter
+                  ? `ข้อมูลสะสมช่วงวันที่ ${effectiveStart ? formatIsoToThai(effectiveStart) : '01/01/2569'} – ${effectiveEnd ? formatIsoToThai(effectiveEnd) : '31/12/2569'}${viewType === 'daily' ? ` (รวม ${dailyData.rows.length} วัน)` : ` (รวม ${monthlyData.rows.length} เดือน)`}`
+                  : viewType === 'monthly'
+                    ? `ข้อมูลสะสมภาพรวมรายเดือน ประจำปี 2569 (รวม ${monthlyData.rows.length} เดือน)`
+                    : `ข้อมูลสะสม ณ วันที่ 1 - ${currentDailyMonth.days} ${currentDailyMonth.name}`}
               </span>
             </div>
           </div>
@@ -751,6 +911,17 @@ export default function SprinkleExecutiveOverview({
               {/* Table Body */}
               <tbody className="divide-y divide-slate-100">
                 {viewType === 'monthly' ? (
+                  monthlyData.rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-12 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Calendar className="w-8 h-8 text-slate-300" />
+                          <span className="font-semibold text-slate-600 text-sm">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</span>
+                          <span className="text-xs text-slate-400">ลองปรับช่วงวันที่หรือกด &quot;ล้างวันที่&quot; เพื่อดูข้อมูลทั้งหมด</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
                   // ------------------------------------------
                   // ROWS FOR "แบบรายเดือน" (Monthly Rows)
                   // ------------------------------------------
@@ -800,6 +971,13 @@ export default function SprinkleExecutiveOverview({
                         ) : (
                           <button
                             onClick={() => {
+                              if (hasDateFilter) {
+                                const monthObj = availableMonths.find(m => m.key === row.key);
+                                const mStart = toIsoDate(row.key, 1);
+                                const mEnd = toIsoDate(row.key, monthObj?.days || 30);
+                                setStartDate(effectiveStart && effectiveStart > mStart ? effectiveStart : mStart);
+                                setEndDate(effectiveEnd && effectiveEnd < mEnd ? effectiveEnd : mEnd);
+                              }
                               setActiveDailyMonthKey(row.key);
                               setViewType('daily');
                             }}
@@ -813,13 +991,22 @@ export default function SprinkleExecutiveOverview({
                       </td>
                     </tr>
                   ))
+                  )
                 ) : dailyData.rows.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Calendar className="w-8 h-8 text-slate-300" />
-                          <span className="font-semibold text-slate-600 text-sm">ยังไม่มีข้อมูลประจำเดือน {currentDailyMonth?.name || 'กุมภาพันธ์ 2569'}</span>
-                          <span className="text-xs text-slate-400">ยังไม่มีบันทึกข้อมูลในเดือนนี้ ให้ว่างไว้ก่อน</span>
+                          <span className="font-semibold text-slate-600 text-sm">
+                            {hasDateFilter
+                              ? 'ไม่พบข้อมูลรายวันในช่วงวันที่ที่เลือก'
+                              : `ยังไม่มีข้อมูลประจำเดือน ${currentDailyMonth?.name || 'กุมภาพันธ์ 2569'}`}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {hasDateFilter
+                              ? 'ลองเปลี่ยนช่วงวันที่ หรือกดปุ่ม "ล้างวันที่" ด้านบน'
+                              : 'ยังไม่มีบันทึกข้อมูลในเดือนนี้ ให้ว่างไว้ก่อน'}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -832,7 +1019,7 @@ export default function SprinkleExecutiveOverview({
 
                       return (
                         <tr 
-                          key={row.day}
+                          key={`${row.monthKey || activeDailyMonthKey}-${row.day}`}
                           className={`transition-colors ${
                             isSunday 
                               ? 'bg-red-50/70 text-red-600 font-bold hover:bg-red-100/60' 
