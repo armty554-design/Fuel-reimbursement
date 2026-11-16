@@ -75,6 +75,12 @@ export default function SprinkleExecutiveOverview({
 
   const currentDailyMonth = availableMonths.find(m => m.key === activeDailyMonthKey) || availableMonths[availableMonths.length - 2] || availableMonths[0];
 
+  const currentDailyLatestDay = useMemo(() => {
+    const rawDaily = allDailyOfficial[activeDailyMonthKey] || [];
+    const activeDays = rawDaily.filter(d => (d.km > 0 || d.litres > 0 || d.comp > 0 || d.tanks > 0));
+    return activeDays.length > 0 ? Math.max(...activeDays.map(d => d.day)) : null;
+  }, [allDailyOfficial, activeDailyMonthKey]);
+
   const isFiltered = selectedBranches.length > 0 || selectedVehicles.length > 0;
 
   // Shared helper to filter drivers by active branch/vehicle selection and compute scaling ratio
@@ -402,15 +408,27 @@ export default function SprinkleExecutiveOverview({
 
       const drivers = allDriverSummaries[mKey] || [];
       const base = officialBaseline[mKey] || { km: 0, litres: 0, price: 0, compRate: 0, comp: 0, tanks: 0, perTank: 0 };
+
+      // Calculate latest recorded date for this month
+      const rawDaily = allDailyOfficial[mKey] || [];
+      const activeDays = rawDaily.filter(d => (d.km > 0 || d.litres > 0 || d.comp > 0 || d.tanks > 0));
+      const latestRecordedDay = activeDays.length > 0 ? Math.max(...activeDays.map(d => d.day)) : null;
+
+      // For ongoing month (e.g. Month 11) where data is still being recorded, show up to latest recorded date
+      const isOngoingMonth = mKey === '11';
+      const effectiveEndDay = (isOngoingMonth && latestRecordedDay) ? latestRecordedDay : m.days;
+      const effectiveEndDayStr = String(effectiveEndDay).padStart(2, '0');
+      const effectiveMonthEndIso = toIsoDate(mKey, effectiveEndDay);
+
       const isFullMonthInRange = !hasDateFilter || (
         (!effectiveStart || effectiveStart <= monthStartIso) &&
-        (!effectiveEnd || effectiveEnd >= monthEndIso)
+        (!effectiveEnd || effectiveEnd >= effectiveMonthEndIso)
       );
 
       let km, litres, price, compRate, comp, tanks, perTank, dateRangeStr;
 
       if (isFullMonthInRange) {
-        dateRangeStr = `01/${mKey}/2569 – ${m.days}/${mKey}/2569`;
+        dateRangeStr = `01/${mKey}/2569 – ${effectiveEndDayStr}/${mKey}/2569`;
 
         if (!isFiltered) {
           km = base.km;
@@ -434,10 +452,9 @@ export default function SprinkleExecutiveOverview({
       } else {
         // Partial month range: aggregate from daily official records within [effectiveStart, effectiveEnd]
         const clampedStart = effectiveStart && effectiveStart > monthStartIso ? effectiveStart : monthStartIso;
-        const clampedEnd = effectiveEnd && effectiveEnd < monthEndIso ? effectiveEnd : monthEndIso;
+        const clampedEnd = effectiveEnd && effectiveEnd < effectiveMonthEndIso ? effectiveEnd : effectiveMonthEndIso;
         dateRangeStr = `${formatIsoToThai(clampedStart)} – ${formatIsoToThai(clampedEnd)}`;
 
-        const rawDaily = allDailyOfficial[mKey] || [];
         const fleetRatio = isFiltered ? getFilteredFleet(drivers).fleetRatio : 1;
         const matchedRows = rawDaily
           .filter(d => isDateInRange(toIsoDate(mKey, d.day)))
@@ -754,7 +771,7 @@ export default function SprinkleExecutiveOverview({
                   ? `ข้อมูลสะสมช่วงวันที่ ${effectiveStart ? formatIsoToThai(effectiveStart) : '01/01/2569'} – ${effectiveEnd ? formatIsoToThai(effectiveEnd) : '31/12/2569'}${viewType === 'daily' ? ` (รวม ${dailyData.rows.length} วัน)` : ` (รวม ${monthlyData.rows.length} เดือน)`}`
                   : viewType === 'monthly'
                     ? `ข้อมูลสะสมภาพรวมรายเดือน ประจำปี 2569 (รวม ${monthlyData.rows.length} เดือน)`
-                    : `ข้อมูลสะสม ณ วันที่ 1 - ${currentDailyMonth.days} ${currentDailyMonth.name}`}
+                    : `ข้อมูลสะสม ณ วันที่ 1 - ${(activeDailyMonthKey === '11' && currentDailyLatestDay) ? currentDailyLatestDay : currentDailyMonth.days} ${currentDailyMonth.name}`}
               </span>
             </div>
           </div>
