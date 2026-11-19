@@ -344,12 +344,13 @@ export default function SprinkleExecutiveOverview({
     const d10CompRate = 12.84;
 
     const d11 = allDailyOfficial['11'] || [];
-    const d11Km = d11.reduce((s, r) => s + (r.km || 0), 0) || 32691.22;
-    const d11Litres = d11.reduce((s, r) => s + (r.litres || 0), 0) || 3600.08;
-    const d11Comp = d11.reduce((s, r) => s + (r.comp || 0), 0) || 45144.97;
-    const d11Tanks = d11.reduce((s, r) => s + (r.tanks || 0), 0) || 84523;
-    const d11Price = 42.54;
-    const d11CompRate = 12.54;
+    const d11Km = d11.reduce((s, r) => s + (r.km || 0), 0) || 323429.90;
+    const d11Litres = d11.reduce((s, r) => s + (r.litres || 0), 0) || 37472.12;
+    const d11Comp = d11.reduce((s, r) => s + (r.comp || 0), 0) || 430288.49;
+    const d11Tanks = d11.reduce((s, r) => s + (r.tanks || 0), 0) || 820771;
+    const d11Active = d11.filter(r => (r.km || 0) > 0 && (r.price || 0) > 0);
+    const d11Price = d11Active.length ? parseFloat((d11Active.reduce((a, b) => a + (b.price || 0), 0) / d11Active.length).toFixed(2)) : 41.51;
+    const d11CompRate = parseFloat(Math.max(0, d11Price - basePrice).toFixed(2));
 
     const officialBaseline = {
       '01': { 

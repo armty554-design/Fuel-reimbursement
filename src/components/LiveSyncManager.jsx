@@ -88,17 +88,20 @@ export default function LiveSyncManager({
         }
       }
 
-      // Also sync active month driver diff if available
-      try {
-        const diffResult = await fetchLiveDriverDiff(selectedMonthKey);
-        if (diffResult && diffResult.drivers && diffResult.drivers.length > 0) {
-          setAllDriverSummaries(prev => ({
-            ...prev,
-            [selectedMonthKey]: diffResult.drivers
-          }));
+      // Also sync drivers for active month and month 11
+      const driverMonthsToSync = Array.from(new Set([selectedMonthKey, '11'].filter(k => SHEET_CONFIG[k])));
+      for (const dKey of driverMonthsToSync) {
+        try {
+          const diffResult = await fetchLiveDriverDiff(dKey);
+          if (diffResult && diffResult.drivers && diffResult.drivers.length > 0) {
+            setAllDriverSummaries(prev => ({
+              ...prev,
+              [dKey]: diffResult.drivers
+            }));
+          }
+        } catch (diffErr) {
+          console.warn(`Live sync driver diff warning for month ${dKey}:`, diffErr);
         }
-      } catch (diffErr) {
-        console.warn(`Live sync driver diff warning:`, diffErr);
       }
 
       setLastSyncTime(new Date());

@@ -83,11 +83,42 @@ export function cleanNum(val) {
 }
 
 /**
- * Build CSV export URL with cache-busting timestamp
+ * Build CSV export URL with cache-busting timestamp using gviz/tq (Direct 200 with CORS)
  */
 export function getExportUrl(gid) {
   const timestamp = Date.now();
-  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}&_t=${timestamp}`;
+  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}&_t=${timestamp}`;
+}
+
+/**
+ * Robust Google Sheets CSV fetcher with automatic gviz/tq and export fallback
+ */
+export async function fetchCsvFromGoogle(gid) {
+  const timestamp = Date.now();
+  const primaryUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}&_t=${timestamp}`;
+  try {
+    const res = await fetch(primaryUrl, {
+      method: 'GET',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    });
+    if (res.ok) {
+      const text = await res.text();
+      if (text && text.trim().length > 0) return text;
+    }
+  } catch (e) {
+    console.warn(`gviz/tq fetch warning for gid ${gid}, trying export:`, e);
+  }
+
+  // Fallback to export endpoint
+  const fallbackUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}&_t=${timestamp}`;
+  const resFallback = await fetch(fallbackUrl, {
+    method: 'GET',
+    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+  });
+  if (!resFallback.ok) {
+    throw new Error(`Google Sheets fetch failed: ${resFallback.status}`);
+  }
+  return await resFallback.text();
 }
 
 /**
@@ -97,32 +128,53 @@ export async function fetchLiveDailyComp(monthKey, basePrice = 30.0) {
   const cfg = SHEET_CONFIG[monthKey];
   if (!cfg || !cfg.compGid) return null;
 
-  const url = getExportUrl(cfg.compGid);
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache'
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error(`Google Sheets fetch failed: ${res.status} ${res.statusText}`);
-  }
-
-  const csvText = await res.text();
+  const csvText = await fetchCsvFromGoogle(cfg.compGid);
   const rows = parseCsv(csvText);
 
   const daily = [];
   const prices = {};
   let summary = null;
 
-  for (let r = 2; r < rows.length; r++) {
+  for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
-    if (!row || !row[1]) continue;
+    if (!row || row.length < 3) continue;
+
+    const dayName = row[0] ? row[0].trim() : '';
+    const dateStr = row[1] ? row[1].trim() : '';
+
+    // Check if row has a valid date string (e.g. 01/11/2026, 1/11/2026, 1/11/2569)
+    const dateMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dateMatch) {
+      const day = parseInt(dateMatch[1], 10);
+      if (!day) continue;
+
+      const km = cleanNum(row[2]);
+      const litres = cleanNum(row[3]);
+      const price = cleanNum(row[4]);
+      const compRate = cleanNum(row[5]) || Math.max(0, price - basePrice);
+      const comp = cleanNum(row[6]);
+      const tanks = cleanNum(row[7]);
+      const perTank = cleanNum(row[8]);
+
+      if (price > 0) prices[day] = price;
+      daily.push({
+        day,
+        dayName,
+        dateStr,
+        km,
+        litres,
+        price,
+        compRate,
+        comp,
+        tanks,
+        perTank,
+        isSunday: dayName === 'อาทิตย์'
+      });
+      continue;
+    }
 
     // Detect summary row
-    if (row[0].includes('ผลรวม') || row[1].includes('ผลรวม')) {
+    if (dayName.includes('ผลรวม') || dateStr.includes('ผลรวม') || (!dateStr && cleanNum(row[2]) > 0 && r >= 15)) {
       summary = {
         totalKm: cleanNum(row[2]),
         totalLitres: cleanNum(row[3]),
@@ -132,37 +184,7 @@ export async function fetchLiveDailyComp(monthKey, basePrice = 30.0) {
         totalTanks: cleanNum(row[7]),
         costPerTank: cleanNum(row[8])
       };
-      continue;
     }
-
-    const dayName = row[0];
-    const dateStr = row[1];
-    const parts = dateStr.split('/');
-    const day = parseInt(parts[0], 10);
-    if (!day) continue;
-
-    const km = cleanNum(row[2]);
-    const litres = cleanNum(row[3]);
-    const price = cleanNum(row[4]);
-    const compRate = cleanNum(row[5]) || Math.max(0, price - basePrice);
-    const comp = cleanNum(row[6]);
-    const tanks = cleanNum(row[7]);
-    const perTank = cleanNum(row[8]);
-
-    prices[day] = price;
-    daily.push({
-      day,
-      dayName,
-      dateStr,
-      km,
-      litres,
-      price,
-      compRate,
-      comp,
-      tanks,
-      perTank,
-      isSunday: dayName === 'อาทิตย์'
-    });
   }
 
   // If summary row was not found, calculate from daily rows
@@ -234,38 +256,16 @@ export async function fetchLiveDriverDiff(monthKey) {
   const cfg = SHEET_CONFIG[monthKey];
   if (!cfg || !cfg.diffGid) return null;
 
-  const url = getExportUrl(cfg.diffGid);
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache'
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error(`Google Sheets diff fetch failed: ${res.status}`);
-  }
-
-  const csvText = await res.text();
+  const csvText = await fetchCsvFromGoogle(cfg.diffGid);
   const rows = parseCsv(csvText);
 
   // If detailGid is provided (e.g. Month 11), fetch detail sheet to get exact driver compensation & tanks
   const driverDetailMap = {};
   if (cfg.detailGid) {
     try {
-      const detailUrl = getExportUrl(cfg.detailGid);
-      const detailRes = await fetch(detailUrl, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (detailRes.ok) {
-        const detailText = await detailRes.text();
-        const dRows = parseCsv(detailText);
-        for (let r = 1; r < dRows.length; r++) {
+      const detailText = await fetchCsvFromGoogle(cfg.detailGid);
+      const dRows = parseCsv(detailText);
+      for (let r = 1; r < dRows.length; r++) {
           const dRow = dRows[r];
           if (!dRow || !dRow[0] || isNaN(parseInt(dRow[0], 10))) continue;
           const eId = dRow[0].trim();
@@ -291,7 +291,6 @@ export async function fetchLiveDriverDiff(monthKey) {
             driverDetailMap[eId].deliveryUnits += tanks;
           }
         }
-      }
     } catch (e) {
       console.warn('Live detail fetch error:', e);
     }

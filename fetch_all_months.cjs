@@ -37,6 +37,14 @@ const monthsToFetch = [
     diffGid: '1173352041',
     tanksGid: '375387489',
     detailGid: '29931557'
+  },
+  {
+    key: '11',
+    name: 'พฤศจิกายน 2569',
+    compGid: '965952839',
+    diffGid: '822357899',
+    tanksGid: '1330045554',
+    detailGid: '861334704'
   }
 ];
 
